@@ -18,9 +18,8 @@ FROM base AS development
 
 RUN poetry install --no-interaction --no-cache --no-root 
 
-COPY alembic.ini main.py ./
+COPY main.py ./
 COPY ./src ./src
-COPY ./alembic ./alembic
 
 CMD ["poetry", "run", "python", "main.py"]
 
@@ -29,8 +28,7 @@ FROM base AS production
 
 RUN poetry install --no-interaction --no-cache --no-root --only main
 
-COPY alembic.ini main.py ./
+COPY main.py ./
 COPY ./src ./src
-COPY ./alembic ./alembic
 
 CMD ["poetry", "run", "python", "main.py"]
