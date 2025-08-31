@@ -1,36 +1,22 @@
-FROM python:3.13-slim AS base
+FROM python:3.9-slim
 
 WORKDIR /app
 
-ENV POETRY_HOME=/opt/poetry
-ENV PATH="$POETRY_HOME/bin:$PATH"
-ENV POETRY_VIRTUALENVS_IN_PROJECT=true
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt update && \
-  apt install -y curl && \
-  curl -sSL https://install.python-poetry.org | python - && \
-  poetry --version
+COPY pyproject.toml .
 
-COPY pyproject.toml poetry.lock ./
+RUN pip install --no-cache-dir poetry && \
+    poetry config virtualenvs.create false && \
+    poetry install --no-dev --no-interaction
 
+COPY . .
 
-FROM base AS development
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
 
-RUN poetry install --no-interaction --no-cache --no-root 
+EXPOSE 8000
 
-COPY alembic.ini main.py ./
-COPY ./src ./src
-COPY ./alembic ./alembic
-
-CMD ["poetry", "run", "python", "main.py"]
-
-
-FROM base AS production
-
-RUN poetry install --no-interaction --no-cache --no-root --only main
-
-COPY alembic.ini main.py ./
-COPY ./src ./src
-COPY ./alembic ./alembic
-
-CMD ["poetry", "run", "python", "main.py"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

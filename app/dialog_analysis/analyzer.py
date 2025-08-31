@@ -52,7 +52,7 @@ def extract_skills(doc) -> List[str]:
     """Извлечение навыков из текста"""
     skills = []
     skill_keywords = ['python', 'java', 'sql', 'ml', 'ai', 'docker', 'aws']
-    
+
     for token in doc:
         if token.text.lower() in skill_keywords:
             skills.append(token.text.lower())
