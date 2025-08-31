@@ -4,26 +4,39 @@ from app.cv_analysis import cv_router
 
 app = FastAPI(title="HR Assistant API", version="1.0.0")
 
-# Настройка CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
-# Подключаем роутер CV анализа
-app.include_router(cv_router, prefix="/api/v1")
+@app.post("/analyze-resume/")
+async def analyze_resume_endpoint(
+    vacancy: VacancyRequest, resume_file: UploadFile = File(...)
+):
+    try:
+        # Сохраняем временный файл
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+            content = await resume_file.read()
+            tmp_file.write(content)
+            tmp_path = tmp_file.name
 
-@app.get("/")
-async def root():
-    return {"message": "HR Assistant API is running", "version": "1.0.0"}
+        # Анализируем резюме
+        result = analyze_resume(tmp_path, vacancy.dict())
+
+        # Удаляем временный файл
+        os.unlink(tmp_path)
+
+        return JSONResponse(content=result)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/analyze-dialog/")
+async def analyze_dialog_endpoint(request: DialogAnalysisRequest):
+    try:
+        result = analyze_dialog(request.dialog, request.criteria)
+        return JSONResponse(content=result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "service": "cv-analysis"}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    return {"status": "healthy", "version": "1.0.0"}

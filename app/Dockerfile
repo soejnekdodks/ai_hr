@@ -19,4 +19,17 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+COPY main.py ./
+COPY ./src ./src
+
+CMD ["poetry", "run", "python", "main.py"]
+
+
+FROM base AS production
+
+RUN poetry install --no-interaction --no-cache --no-root --only main
+
+COPY main.py ./
+COPY ./src ./src
+
+CMD ["poetry", "run", "python", "main.py"]
