@@ -1,37 +1,46 @@
-from pydantic import BaseModel, Field
-from typing import List, Dict, Optional
+from pydantic import BaseModel
+from typing import List, Optional, Dict, Any
 
+# Запрос от Android клиента
+class InterviewRequest(BaseModel):
+    resume_text: str
+    job_description: str
 
-class VacancyRequest(BaseModel):
-    job_title: str
-    required_skills: List[str]
-    nice_to_have_skills: List[str] = Field(default_factory=list)
-    required_experience: int
-    education_level: Optional[str] = None
+# Ответ от cv-ai-service
+class CVAnalysisResult(BaseModel):
+    approved: bool
+    score: Optional[float] = None  # Общая оценка совпадения
+    missing_skills: Optional[List[str]] = None
+    matching_skills: Optional[List[str]] = None
+    rejection_reason: Optional[str] = None # Причина, если approved=False
 
+# Запрос к llm-service для генерации вопросов
+class GenerateQuestionsRequest(BaseModel):
+    resume_text: str
+    job_description: str
 
-class Criteria(BaseModel):
-    name: str
-    weight: float = 1.0
-    description: Optional[str] = None
+# Ответ от llm-service с вопросами
+class GeneratedQuestions(BaseModel):
+    questions: List[str]
 
+# Запрос к llm-service для финальной оценки
+class FinalEvaluationRequest(BaseModel):
+    resume_text: str
+    job_description: str
+    questions: List[str]  # Original questions
+    user_answers: List[str] # User's answers
 
-class DialogTurn(BaseModel):
-    speaker: str
-    text: str
-    timestamp: Optional[str] = None
+# Финальный ответ от llm-service
+class FinalEvaluationResult(BaseModel):
+    approved: bool
+    score: Optional[float] = None
+    correct_answers: Optional[int] = None
+    total_questions: Optional[int] = None
+    feedback: Optional[str] = None
 
-
-class DialogAnalysisRequest(BaseModel):
-    dialog: List[DialogTurn]
-    criteria: List[Criteria]
-    candidate_id: Optional[str] = None
-
-
-class AnalysisResult(BaseModel):
-    candidate_id: str
-    overall_score: float
-    skills_match: Dict[str, float]
-    missing_skills: List[str]
-    recommendation: str
-    details: Dict
+# Ответ, который получит Android клиент
+class InterviewResponse(BaseModel):
+    status: str  # "rejected_after_cv", "rejected_after_interview", "approved"
+    message: str
+    details: Optional[Dict[str, Any]] = None
+    questions: Optional[List[str]] = None # Только если status == "questions_generated"
