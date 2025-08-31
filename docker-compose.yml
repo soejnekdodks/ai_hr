@@ -1,0 +1,46 @@
+services:
+
+  bot:
+    container_name: bot
+    build: 
+      context: ./
+      target: development
+    restart: always
+    env_file: ".env"
+    depends_on:
+      - postgres
+    networks:
+      - net
+
+  postgres:
+    container_name: postgres
+    image: postgres:latest
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${PG_NAME}
+      POSTGRES_USER: ${PG_LOGIN}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  webserver:
+    image: nginx:latest
+    ports:
+      - 80:80
+    restart: always
+    volumes:
+      - ./tokens:/tokens
+      - ./nginx/conf/:/etc/nginx/conf.d/
+    depends_on:
+      - bot
+    networks:
+      - net
+
+volumes:
+  pg_data:
+    name: pg_data
+
+networks:
+  net:
