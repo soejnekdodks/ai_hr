@@ -1,4 +1,4 @@
-version: '3.8'
+
 services:
 
   app:
@@ -9,21 +9,21 @@ services:
     env_file: "./app/.env"
     ports:
       - "8000:8000"
-    # depends_on:
-    #   - cv-ai
-    #   - llm
+    depends_on:
+        - cv-ai
+        # - llm
     networks:
       - net
 
-  # cv-ai:
-  #   container_name: cv-ai
-  #   build:
-  #     context: ./cv-ai/
-  #   env_file: "./cv-ai/.env"
-  #   ports:
-  #     - "8080:8080"
-  #   networks:
-  #     - net
+  cv-ai:
+    container_name: cv-ai
+    build:
+      context: ./cv-ai/
+    env_file: "./cv-ai/.env"
+    ports:
+      - "8080:8080"
+    networks:
+      - net
 
   # llm:
   #   container_name: llm

@@ -4,14 +4,13 @@ from cv_analysis.routers import cv
 from dialog_analysis.routers import llm
 from config import settings
 
-# Создаем основное приложение
+
 app = FastAPI(
     title="AI HR Interview System",
     description="Система для автоматического проведения собеседований с AI",
     version="1.0.0"
 )
 
-# Подключаем роутеры
 app.include_router(cv.router)
 app.include_router(llm.router)
 

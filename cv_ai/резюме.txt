@@ -1,0 +1,41 @@
+Резюме:
+
+Иванов Иван Иванович
+Дата рождения: 15.03.1990
+Телефон: +7 (912) 345-67-89
+Email: ivanov.ivan@mail.ru
+Город: Москва
+
+Цель: Замещение должности Senior Python Developer
+
+Образование:
+Высшее: МГТУ им. Баумана, Факультет информатики и систем управления, Специальность: Программная инженерия, 2008-2013
+
+Опыт работы:
+- Яндекс, Senior Python Developer (2019-настоящее время)
+  Разработка высоконагруженных микросервисов, оптимизация производительности, mentoring junior developers
+- СберТех, Python Developer (2015-2019)
+  Разработка банковских систем, работа с Kafka, Redis, PostgreSQL
+- ООО "ТехноСофт", Junior Python Developer (2013-2015)
+  Разработка веб-приложений на Django
+
+Ключевые навыки:
+- Python 3.8+, asyncio, Django, FastAPI, Flask
+- PostgreSQL, MongoDB, Redis, Elasticsearch
+- Docker, Kubernetes, CI/CD
+- AWS, GCP, микросервисная архитектура
+- Machine Learning: scikit-learn, pandas, numpy
+- Английский язык: Advanced (C1)
+
+Проекты:
+- Разработка системы рекомендаций для маркетплейса (Python, ML)
+- Оптимизация API с 200ms до 50ms response time
+- Миграция монолита на микросервисную архитектуру
+
+Сертификаты:
+- AWS Certified Solutions Architect
+- Kubernetes Administrator (CKA)
+
+Заработная плата: от 350 000 руб.
+Готов к релокации: Москва, Санкт-Петербург, Новосибирск
+Гражданство: РФ
