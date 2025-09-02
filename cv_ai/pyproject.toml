@@ -8,28 +8,20 @@ authors = [
     "Anthony Simonov <asimonov05@gmail.com>"
 ]
 readme = "README.md"
-license = "MIT"
 packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.13,<3.14"
 # Web Framework
 fastapi = "0.116.1"
 uvicorn = {extras = ["standard"], version = "0.35.0"}
 
 # ML & NLP
 transformers = "4.56.0"
-torch = "2.5.0"
 datasets = "4.0.0"
-accelerate = "1.0.0"
-sentencepiece = "0.2.0"
-tokenizers = "0.21.0"
 
 # Data Processing
-numpy = "2.0.0"
-pandas = "2.2.0"
 scikit-learn = "1.5.0"
-ijson = "3.4.0"
 
 # NER Specific
 seqeval = "1.2.2"
@@ -40,21 +32,16 @@ pydantic = "2.10.0"
 pydantic-settings = "2.10.1"
 python-dotenv = "1.1.1"
 tqdm = "4.67.0"
-requests = "2.32.0"
 
 # File Processing
 python-multipart = "0.0.7"
-
-# Async
-aiofiles = "23.2.0"
-
-# Configuration
-pyyaml = "6.0.0"
+torch = "^2.8.0"
+sentence-transformers = "^5.1.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.12.9"
-pytest = "8.3.4"
 
 [build-system]
 requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
+
