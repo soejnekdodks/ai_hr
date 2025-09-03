@@ -1,0 +1,30 @@
+[project]
+name = "registration-bot"
+version = "0.1.1"
+description = "malenkiy milenky botik"
+authors = [
+    {name = "breakcore-chan",email = "sergejglebov25@gmail.com"},
+    {name = "soejnekdodks",email = "brmstr4me@gmail.com"},
+    {name = "Anthony Simonov", email = "asimonov05@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13,<4.0"
+dependencies = [
+    "fastapi[all] (>=0.116.1,<0.117.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "sqlalchemy (>=2.0.43,<3.0.0)",
+    "aiogram (>=3.22.0,<4.0.0)",
+    "alembic (>=1.16.4,<2.0.0)",
+    "loguru (>=0.7.3,<0.8.0)"
+]
+
+[tool.poetry]
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.12.9"
+pytest = "^8.4.1"
+pyright = "^1.1.403"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

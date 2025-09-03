@@ -1,0 +1,78 @@
+# Исключаем различные commonly игнорируемые директории.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+
+# Так же как Black.
+line-length = 88
+indent-width = 4
+
+[lint]
+# Включаем Pyflakes (`F`) и подмножество кодов pycodestyle (`E`) по умолчанию.
+# В отличие от Flake8, Ruff не включает предупреждения pycodestyle (`W`) или
+# сложность McCabe (`C901`) по умолчанию.
+select = ["E4", "E7", "E9", "F"]
+ignore = []
+
+# Разрешаем исправления для всех включенных правил (когда предоставлен `--fix`).
+fixable = ["ALL"]
+unfixable = []
+
+# Разрешаем неиспользуемые переменные с префиксом подчеркивания.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+# Игнорируем `E402` (нарушения импортов) во всех файлах `__init__.py` и в выбранных поддиректориях.
+[lint.per-file-ignores]
+"__init__.py" = ["E402", "F401"]
+"**/{tests,docs,tools}/*" = ["E402"]
+
+[format]
+# Как Black, используем двойные кавычки для строк.
+quote-style = "double"
+
+# Как Black, используем пробелы для отступов, а не табы.
+indent-style = "space"
+
+# Как Black, уважаем trailing commas.
+skip-magic-trailing-comma = false
+
+# Как Black, автоматически определяем подходящее окончание строк.
+line-ending = "auto"
+
+# Включаем автоформатирование примеров кода в docstrings. Поддерживаются
+# Markdown, reStructuredText code/literal blocks и doctests.
+#
+# В настоящее время по умолчанию отключено, но планируется
+# сделать это опцией opt-out в будущем.
+docstring-code-format = false
+
+# Устанавливаем ограничение длины строки при форматировании сниппетов кода
+# в docstrings.
+#
+# Имеет эффект только когда включена настройка `docstring-code-format`.
+docstring-code-line-length = "dynamic"
