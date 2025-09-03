@@ -1,4 +1,5 @@
-from src.api import cv_analize
+import re
+from api import cv_analize
 from pprint import pprint
 
 resume_text = """
@@ -13,9 +14,17 @@ vacancy_text = """
 Работа в Москве. Офис в центре города.
 """
 
-pprint(cv_analize(resume_text, vacancy_text))
+# pprint(cv_analize(resume_text, vacancy_text))
+
+def clean_quotes(text: str) -> str:
+    # заменяем "..." внутри русских слов на «...»
+    text = re.sub(r'\"([А-Яа-яA-Za-z0-9\s\-]+)\"', r'«\1»', text)
+    return text
 
 
-# with open("/Users/brmstr/Repos/ai_hr/ai_hr/cv_ai/src/dataset/вакансия.txt", "r") as vaca:
-#     with open("/Users/brmstr/Repos/ai_hr/ai_hr/cv_ai/src/dataset/резюме.txt", "r") as cv:
-#         pprint(cv_analize(cv.read(), vaca.read()))
+
+with open("C:\\Users\\user\source\\repos\\ai_hr\\ai_hr\cv_ai\src\dataset\вакансия.txt", "r", encoding="utf-8") as vaca:
+    with open("C:\\Users\\user\source\\repos\\ai_hr\\ai_hr\cv_ai\src\dataset\резюме.txt", "r", encoding="utf-8") as cv:
+        resume_text = clean_quotes(cv.read())
+        vacancy_text = clean_quotes(vaca.read())
+        pprint(cv_analize(resume_text, vacancy_text))
