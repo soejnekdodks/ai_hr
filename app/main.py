@@ -8,10 +8,10 @@ import os
 
 app = FastAPI(title="AI HR System", version="1.0.0")
 
+
 @app.post("/analyze-resume/")
 async def analyze_resume_endpoint(
-    vacancy: VacancyRequest,
-    resume_file: UploadFile = File(...)
+    vacancy: VacancyRequest, resume_file: UploadFile = File(...)
 ):
     try:
         # Сохраняем временный файл
@@ -19,17 +19,18 @@ async def analyze_resume_endpoint(
             content = await resume_file.read()
             tmp_file.write(content)
             tmp_path = tmp_file.name
-        
+
         # Анализируем резюме
         result = analyze_resume(tmp_path, vacancy.dict())
-        
+
         # Удаляем временный файл
         os.unlink(tmp_path)
-        
+
         return JSONResponse(content=result)
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/analyze-dialog/")
 async def analyze_dialog_endpoint(request: DialogAnalysisRequest):
@@ -38,6 +39,7 @@ async def analyze_dialog_endpoint(request: DialogAnalysisRequest):
         return JSONResponse(content=result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/health")
 async def health_check():
