@@ -1,42 +1,37 @@
+import uvicorn
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from app.cv_analysis import cv_router
+from cv_analysis.routers import cv
+from dialog_analysis.routers import llm
+from config import settings
 
-app = FastAPI(title="HR Assistant API", version="1.0.0")
+# Создаем основное приложение
+app = FastAPI(
+    title="AI HR Interview System",
+    description="Система для автоматического проведения собеседований с AI",
+    version="1.0.0"
+)
 
+# Подключаем роутеры
+app.include_router(cv.router)
+app.include_router(llm.router)
 
-@app.post("/analyze-resume/")
-async def analyze_resume_endpoint(
-    vacancy: VacancyRequest, resume_file: UploadFile = File(...)
-):
-    try:
-        # Сохраняем временный файл
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-            content = await resume_file.read()
-            tmp_file.write(content)
-            tmp_path = tmp_file.name
-
-        # Анализируем резюме
-        result = analyze_resume(tmp_path, vacancy.dict())
-
-        # Удаляем временный файл
-        os.unlink(tmp_path)
-
-        return JSONResponse(content=result)
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/analyze-dialog/")
-async def analyze_dialog_endpoint(request: DialogAnalysisRequest):
-    try:
-        result = analyze_dialog(request.dialog, request.criteria)
-        return JSONResponse(content=result)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+@app.get("/")
+async def root():
+    return {
+        "message": "AI HR Interview System is running",
+        "docs": "/docs",
+        "cv_service": f"{settings.CV_AI_SERVICE_URL}/docs",
+        "llm_service": f"{settings.LLM_SERVICE_URL}"
+    }
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "version": "1.0.0"}
+    return {"status": "healthy", "service": "main-app"}
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "main:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.DEBUG
+    )
