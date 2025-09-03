@@ -13,7 +13,7 @@ class Config(BaseSettings):
         description="Дирректория с дообученной моделью", default="./cv_model"
     )
     TOKEN_MODEL_NAME: str = Field(
-        description="Название модели для выделениея токенов", default="cointegrated/rubert-tiny2"
+        description="Название модели для выделениея токенов", default="FacebookAI/xlm-roberta-large-finetuned-conll03-german"
     )
     SEMANTIC_MODEL_NAME: str = Field(
         description="Название модели для семантического анализа", default="paraphrase-multilingual-MiniLM-L12-v2"
@@ -29,6 +29,6 @@ class Config(BaseSettings):
     DATASET_PATH: str = Field(
         description="Путь до датасета", default="./dataset/cv.json"
     )
-
+    ENV: str = Field(description="окружение: dev, prod", default="dev")
 
 config = Config()

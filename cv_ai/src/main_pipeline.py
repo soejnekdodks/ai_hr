@@ -2,26 +2,26 @@ from sentence_transformers import SentenceTransformer, util
 import sys
 import os
 from src.config import config
-from cv_ai.src.ner import NERModel
+from src.ner import NERModel
+
 
 class ResumeVacancyMatcher:
     def __init__(self, model):
-        # Загружаем NER модель
+        # Загружаем NER модель (сразу с aggregation_strategy)
         self.ner_pipeline = model.pipeline
+        self.ner_pipeline = lambda text: model.pipeline(
+            text,
+            aggregation_strategy="simple"
+        )
 
-        # Загружаем модель для эмбеддингов
         self.embedder = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
         
-        # Веса для разных категорий
         self.category_weights = {
-            "POSITION": 0.4,    # Должность - самый важный
-            "SKILL": 0.3,       # Навыки
-            "LOCATION": 0.15,   # Местоположение
-            "COMPANY": 0.05,    # Компания
-            "EDUCATION": 0.05,  # Образование
-            "EXPERIENCE": 0.05  # Опыт
+            "LOCATION": 0.2,
+            "EDUCATION": 0.4,
+            "EXPERIENCE": 0.4,
         }
-    
+
     def match(self, resume_text, vacancy_text):
         """Сравнивает резюме и вакансию"""
         # Извлекаем сущности
@@ -48,9 +48,9 @@ class ResumeVacancyMatcher:
         }
     
     def __extract_entities(self, text):
-        """Извлекает сущности из текста"""
-        return self.ner_pipeline(text)
-    
+        raw_entities = self.ner_pipeline(text)
+        return raw_entities
+  
     def __compare_by_category(self, resume_entities, vacancy_entities):
         """Сравнивает сущности по категориям"""
         category_scores = {}
@@ -63,7 +63,7 @@ class ResumeVacancyMatcher:
         all_categories = set(resume_by_cat.keys()) | set(vacancy_by_cat.keys())
         
         for category in all_categories:
-            resume_items = resume_by_cat.get(category, [])
+            resume_items = vacancy_by_cat.get(category, [])
             vacancy_items = vacancy_by_cat.get(category, [])
             
             if resume_items and vacancy_items:
@@ -89,41 +89,3 @@ class ResumeVacancyMatcher:
             grouped[category].append(entity)
         return grouped
 
-# Инициализация
-model = NERModel()
-
-matcher = ResumeVacancyMatcher(model=model)
-
-# Резюме и вакансия
-resume_text = """
-Иванов Иван Python разработчик с 5 летним опытом.
-Работал в Яндексе с Django и Flask. 
-Проживает в Москве. Высшее образование МГУ.
-"""
-
-vacancy_text = """
-Ищем Senior Python developer с опытом работы от 3 лет.
-Требования: Django, Flask, PostgreSQL. 
-Работа в Москве. Офис в центре города.
-"""
-
-# Сравнение
-result = matcher.match(resume_text, vacancy_text)
-def print_match_details(result):
-    """Красивая печать результатов"""
-    print("🎯 Match Results")
-    print(f"Overall Score: {result['score']}%")
-    print("\n📊 Category Scores:")
-    for category, score in result['category_scores'].items():
-        print(f"  {category:12}: {score:.3f}")
-    
-    print("\n📝 Resume Entities:")
-    for entity in result['resume_entities']:
-        print(f"  {entity['word']:15} → {entity['entity_group']}")
-    
-    print("\n📋 Vacancy Entities:")
-    for entity in result['vacancy_entities']:
-        print(f"  {entity['word']:15} → {entity['entity_group']}")
-
-# Использование
-print_match_details(result)

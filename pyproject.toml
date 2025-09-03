@@ -37,6 +37,7 @@ tqdm = "4.67.0"
 python-multipart = "0.0.7"
 torch = "^2.8.0"
 sentence-transformers = "^5.1.0"
+accelerate = "^1.10.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.12.9"

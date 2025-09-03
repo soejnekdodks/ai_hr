@@ -53,5 +53,3 @@ class NERModel:
             tokenizer=self.tokenizer,
             aggregation_strategy="simple"
         )
-
-model = NERModel()

@@ -1,19 +1,7 @@
 import json
-from typing import Dict, Any
 
-# {
-#   "text": "Калужская область Мосальский район г Мосальск Подсобный рабочий ООО Омега сборщик обуви",
-#   "annotations": [
-#     {"start": 0, "end": 15, "label": "LOCATION"},
-#     {"start": 16, "end": 32, "label": "LOCATION"},
-#     {"start": 33, "end": 44, "label": "LOCATION"},
-#     {"start": 45, "end": 61, "label": "POSITION"},
-#     {"start": 62, "end": 70, "label": "COMPANY"},
-#     {"start": 71, "end": 84, "label": "POSITION"}
-#   ]
-# }
 
-def extract_ner_annotations(cv_data: Dict[str, Any]) -> Dict[str, Any]:
+def extract_ner_annotations(cv_data: dict) -> dict:
     """Извлекает текст и аннотации из данных резюме"""
     
     text_parts = []
@@ -26,7 +14,7 @@ def extract_ner_annotations(cv_data: Dict[str, Any]) -> Dict[str, Any]:
         ('positionName', 'POSITION'),
         ('companyName', 'COMPANY'),
         ('jobTitle', 'POSITION'),
-        ('instituteName', 'EDUCATION'),
+        ('education', 'EDUCATION'),
         ('skills', 'SKILL'),
         ('languageKnowledge', 'LANGUAGE')
     ]
@@ -65,16 +53,11 @@ def create_ner_dataset(cv_json_path: str, output_path: str) -> list[dict]:
         data = json.load(f)
     
     annotated_data = []
-    
-    for cv in data['cvs']:
-        try:
-            annotated = extract_ner_annotations(cv)
-            if annotated['annotations']:  # Только если есть аннотации
-                annotated_data.append(annotated)
-        except Exception as e:
-            print(f"Error processing CV: {e}")
-            continue
-    
+    for cv in data:
+        annotated = extract_ner_annotations(cv)
+        if annotated['annotations']:  # Только если есть аннотации
+            annotated_data.append(annotated)
+
     # Сохраняем датасет
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(annotated_data, f, ensure_ascii=False, indent=2)
@@ -83,4 +66,21 @@ def create_ner_dataset(cv_json_path: str, output_path: str) -> list[dict]:
     return annotated_data
 
 # Использование
-create_ner_dataset('cv_data.json', 'ner_dataset.json')
+create_ner_dataset('/Users/brmstr/Repos/ai_hr/ai_hr/cv_ai/src/dataset/cv_3 (2).json', '/Users/brmstr/Repos/ai_hr/ai_hr/cv_ai/src/dataset/cv_upgrade.json')
+
+
+{'localityName': 'Нижегородская область', 
+ 'positionName': 'Администратор', 
+ 'experience': 0, 
+ 'professionList': [{'codeProfessionalSphere': 'Culture'}],
+ 'educationList': [],
+ 'education': None,
+ 'hardSkills': [],
+ 'softSkills': [],
+ 'skills': [],
+ 'workExperienceList': [],
+ 'scheduleType': 'Полный рабочий день',
+ 'salary': 45000,
+ 'languageKnowledge': [{'codeLanguage': 'Английский', 'level': 'A1 — начальный', 'type': 'LanguageKnowledge'}],
+ 'country': [{'countryName': 'Российская Федерация'}], 
+ 'age': 33}
