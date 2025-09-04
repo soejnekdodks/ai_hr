@@ -85,20 +85,20 @@ class NERModel:
             tokenizer=self.tokenizer,
             aggregation_strategy="simple",
         )
-=======
-    labels_hint = ", ".join(config.LABELS)
-    example = {k: [] for k in config.LABELS}
 
-    return (
-        f"{task}\n"
-        f"Return STRICTLY valid JSON with this structure:\n"
-        f"{json.dumps(example, ensure_ascii=False)}\n\n"
-        f"Rules:\n"
-        f"- JSON only, no comments or explanations.\n"
-        f"- Each list item must be short and atomic.\n"
-        f"- Do not invent data. If a section is empty, return [].\n"
-        f"- Valid keys: {labels_hint}.\n"
-    )
+        labels_hint = ", ".join(config.LABELS)
+        example = {k: [] for k in config.LABELS}
+
+        return (
+            f"{task}\n"
+            f"Return STRICTLY valid JSON with this structure:\n"
+            f"{json.dumps(example, ensure_ascii=False)}\n\n"
+            f"Rules:\n"
+            f"- JSON only, no comments or explanations.\n"
+            f"- Each list item must be short and atomic.\n"
+            f"- Do not invent data. If a section is empty, return [].\n"
+            f"- Valid keys: {labels_hint}.\n"
+        )
 
 
 class ResumeParser:
