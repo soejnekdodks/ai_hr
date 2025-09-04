@@ -11,23 +11,20 @@ class Config(BaseSettings):
     )
 
     # Базовая модель + адаптер
-    BASE_MODEL: str = Field(
-        default="Qwen/Qwen3-0.6B",
-        description="Базовая LLM модель"
-    )
+    BASE_MODEL: str = Field(default="Qwen/Qwen3-0.6B", description="Базовая LLM модель")
     LORA_MODEL: str = Field(
         default="antontuzov/liza-06-resume-russian",
-        description="LoRA-адаптер для анализа резюме"
+        description="LoRA-адаптер для анализа резюме",
     )
 
     SEMANTIC_MODEL_NAME: str = Field(
         description="Модель для семантического сравнения",
-        default="sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+        default="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
     )
 
     LABELS: list[str] = Field(
         description="Типы сущностей",
-        default=["SKILL", "EDUCATION", "EXPERIENCE", "PERSON", "LOCATION"]
+        default=["SKILL", "EDUCATION", "EXPERIENCE", "PERSON", "LOCATION"],
     )
 
     DATASET_PATH: str = Field(

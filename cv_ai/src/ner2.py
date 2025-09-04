@@ -6,6 +6,7 @@ import re
 from typing import Dict, List
 from config import config
 
+
 def _build_json_instruction(mode: str) -> str:
     if mode == "resume":
         task = (
@@ -30,9 +31,9 @@ def _build_json_instruction(mode: str) -> str:
         "EXPERIENCE": [],
         "PERSON": [],
         "LOCATION": [],
-        "SOFT_SKILL": []
+        "SOFT_SKILL": [],
     }
-    
+
     return (
         f"{task}. Верните СТРОГО валидный JSON со структурами:\n"
         f"{json.dumps(example, ensure_ascii=False)}\n"
@@ -43,13 +44,12 @@ def _build_json_instruction(mode: str) -> str:
         f"— Допустимые ключи: {labels_hint}.\n"
     )
 
+
 class ResumeParser:
     def __init__(self):
         # Загружаем базовую модель + LoRA
         base = AutoModelForCausalLM.from_pretrained(
-            config.BASE_MODEL,
-            torch_dtype=torch.float16,
-            device_map="auto"
+            config.BASE_MODEL, torch_dtype=torch.float16, device_map="auto"
         )
         tokenizer = AutoTokenizer.from_pretrained(config.BASE_MODEL)
         self.model = PeftModel.from_pretrained(base, config.LORA_MODEL)
@@ -100,7 +100,7 @@ class ResumeParser:
             else:
                 result[k] = []
         return result
-        
+
     @staticmethod
     def _normalize(items: List[str]) -> List[str]:
         out = []
@@ -116,14 +116,11 @@ class ResumeParser:
                 uniq.append(x)
                 seen.add(x)
         return uniq
-        
+
     def _run_model(self, prompt: str) -> str:
         """Запускает модель и возвращает сырой текст (без постобработки)."""
         inputs = self.tokenizer(
-            prompt,
-            return_tensors="pt",
-            truncation=True,
-            max_length=2048
+            prompt, return_tensors="pt", truncation=True, max_length=2048
         ).to(self.model.device)
 
         with torch.no_grad():
@@ -136,8 +133,7 @@ class ResumeParser:
             )
 
         raw = self.tokenizer.decode(
-            out[0][inputs.input_ids.shape[-1]:],
-            skip_special_tokens=True
+            out[0][inputs.input_ids.shape[-1] :], skip_special_tokens=True
         )
         return raw
 
