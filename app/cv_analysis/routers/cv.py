@@ -1,15 +1,12 @@
 from fastapi import APIRouter
 from models import CVAnalysisResult  # Импортируем общую модель
-# ... ваш импорт для анализа резюме ...
+# ... импорт для анализа резюме ...
 
 router = APIRouter()
 
 @router.post("/analyze_cv", response_model=CVAnalysisResult)
 async def analyze_cv_endpoint(resume_text: str, job_description: str):
-    """
-    Эндпоинт для анализа резюме.
-    """
-    # Здесь ваша логика анализа резюме с помощью ML моделей
+    # Здесь логика анализа резюме с помощью ML моделей
     is_approved, score, missing_skills, matching_skills = await analyze_resume(resume_text, job_description)
 
     result = CVAnalysisResult(

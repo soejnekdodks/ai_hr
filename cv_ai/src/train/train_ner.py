@@ -1,169 +1,201 @@
+import logging
 from transformers import (
-    AutoTokenizer,
+    AutoTokenizer, 
     AutoModelForTokenClassification,
-    TrainingArguments,
+    TrainingArguments, 
     Trainer,
-    DataCollatorForTokenClassification,
+    DataCollatorForTokenClassification
 )
+from sklearn.model_selection import train_test_split
 from datasets import Dataset
 import numpy as np
-from typing import Tuple, Dict, Any
-from seqeval.metrics import f1_score
+from .config import TrainingConfig
 
+# Метки для NER
+LABELS = [
+    "O", "B-PERSON", "I-PERSON", "B-LOCATION", "I-LOCATION",
+    "B-POSITION", "I-POSITION", "B-SKILL", "I-SKILL", "B-COMPANY", "I-COMPANY",
+    "B-DATE", "I-DATE", "B-EMAIL", "I-EMAIL", "B-PHONE", "I-PHONE"
+]
 
-def tokenize_and_align_labels(examples: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Токенизирует текст и выравнивает метки с subword токенами.
-
-    Args:
-        examples: Батч данных из датасета
-
-    Returns:
-        Dict: Токенизированные данные с выровненными метками
-    """
-    # Токенизируем текст
-    tokenized_inputs = tokenizer(
-        examples["tokens"],
-        truncation=True,
-        is_split_into_words=True,  # Указываем, что текст уже разбит на слова
-        padding="max_length",
-        max_length=128,  # Можно увеличить для длинных резюме
-        return_tensors=None,  # Возвращаем обычные списки, а не тензоры
-    )
-
-    labels = []
-    for i, label in enumerate(examples["tags"]):
-        # Получаем mapping между токенами и исходными словами
-        word_ids = tokenized_inputs.word_ids(batch_index=i)
-
-        previous_word_idx = None
-        label_ids = []
-
-        for word_idx in word_ids:
-            # Специальные токены ([CLS], [SEP], [PAD]) получают метку -100
-            if word_idx is None:
-                label_ids.append(-100)
-            # Для первого subword-токена слова используем метку слова
-            elif word_idx != previous_word_idx:
-                label_ids.append(label[word_idx])
-            # Для остальных subword-токенов того же слова ставим -100
-            else:
-                label_ids.append(-100)
-            previous_word_idx = word_idx
-
-        labels.append(label_ids)
-
-    tokenized_inputs["labels"] = labels
-    return tokenized_inputs
-
-
-def compute_metrics(p: Tuple[np.ndarray, np.ndarray]) -> Dict[str, float]:
-    """
-    Вычисляет метрики качества модели durante валидации.
-
-    Args:
-        p: Кортеж (predictions, label_ids)
-
-    Returns:
-        Dict: Словарь с метриками
-    """
-    predictions, labels = p
-    predictions = np.argmax(predictions, axis=2)
-
-    # Убираем padding и специальные токены (где label = -100)
-    true_predictions = [
-        [id2label[p] for (p, l) in zip(prediction, label) if l != -100]
-        for prediction, label in zip(predictions, labels)
-    ]
-    true_labels = [
-        [id2label[l] for (p, l) in zip(prediction, label) if l != -100]
-        for prediction, label in zip(predictions, labels)
-    ]
-
-    return {
-        "f1": f1_score(true_labels, true_predictions),
-        "accuracy": (np.array(true_predictions) == np.array(true_labels)).mean(),
-    }
-
-
-def main():
-    """Основная функция обучения модели."""
-    # 1. Инициализация модели и токенизатора
-    model_name = "cointegrated/rubert-tiny2"
-    print(f"Загрузка модели {model_name}...")
-
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForTokenClassification.from_pretrained(
-        model_name, num_labels=len(LABELS), id2label=id2label, label2id=label2id
-    )
-
-    # 2. Загрузка и подготовка данных
-    print("Загрузка данных...")
-    train_texts, train_tags, val_texts, val_tags = load_data()
-
-    # Создаем datasets в формате Hugging Face
-    train_dataset = Dataset.from_dict({"tokens": train_texts, "tags": train_tags})
-    val_dataset = Dataset.from_dict({"tokens": val_texts, "tags": val_tags})
-
-    # Токенизируем datasets
-    print("Токенизация данных...")
-    tokenized_train_dataset = train_dataset.map(
-        tokenize_and_align_labels,
-        batched=True,
-        remove_columns=train_dataset.column_names,
-    )
-    tokenized_val_dataset = val_dataset.map(
-        tokenize_and_align_labels, batched=True, remove_columns=val_dataset.column_names
-    )
-
-    # 3. Настройка параметров обучения
-    training_args = TrainingArguments(
-        output_dir="./cv-ner-model",  # Куда сохранять модель
-        evaluation_strategy="epoch",  # Оценивать после каждой эпохи
-        save_strategy="epoch",  # Сохранять после каждой эпохи
-        learning_rate=2e-5,  # Скорость обучения
-        per_device_train_batch_size=8,  # Размер батча для обучения
-        per_device_eval_batch_size=8,  # Размер батча для оценки
-        num_train_epochs=3,  # Количество эпох
-        weight_decay=0.01,  # L2 регуляризация
-        load_best_model_at_end=True,  # Загружать лучшую модель в конце
-        metric_for_best_model="f1",  # По какой метрике выбирать лучшую
-        greater_is_better=True,  # Больше F1 = лучше
-        logging_dir="./logs",  # Директория для логов
-        logging_steps=10,  # Частота логирования
-        report_to="none",  # Не отправлять в сторонние сервисы
-    )
-
-    # 4. Инициализация DataCollator
-    data_collator = DataCollatorForTokenClassification(
-        tokenizer=tokenizer, padding=True
-    )
-
-    # 5. Создание и запуск Trainer
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=tokenized_train_dataset,
-        eval_dataset=tokenized_val_dataset,
-        tokenizer=tokenizer,
-        data_collator=data_collator,
-        compute_metrics=compute_metrics,
-    )
-
-    print("Начало обучения...")
-    train_result = trainer.train()
-
-    # 6. Сохранение результатов
-    trainer.save_model()  # Сохраняем лучшую модель
-    trainer.log_metrics("train", train_result.metrics)
-    trainer.save_metrics("train", train_result.metrics)
-    trainer.save_state()
-
-    # 7. Финальная оценка
-    print("\nФинальная оценка на validation set:")
-    metrics = trainer.evaluate()
-    print(metrics)
-
-
-if __name__ == "__main__":
-    main()
+class NERTrainer:
+    def __init__(self, config: TrainingConfig):
+        self.config = config
+        self.tokenizer = AutoTokenizer.from_pretrained(config.model_name)
+        
+        # Создаем mapping меток
+        self.id2label = {i: label for i, label in enumerate(LABELS)}
+        self.label2id = {label: i for i, label in enumerate(LABELS)}
+        
+        self.model = AutoModelForTokenClassification.from_pretrained(
+            config.model_name,
+            num_labels=len(LABELS),
+            id2label=self.id2label,
+            label2id=self.label2id
+        )
+        
+        # Создаем выходную директорию
+        self.config.create_output_dir()
+    
+    def prepare_datasets(self, annotated_data):
+        """Подготовка datasets для обучения"""
+        texts = [item['text'] for item in annotated_data]
+        tags = [self._convert_annotations_to_tags(item) for item in annotated_data]
+        
+        # Разделяем на train/validation
+        train_texts, val_texts, train_tags, val_tags = train_test_split(
+            texts, tags, 
+            test_size=self.config.val_size, 
+            random_state=self.config.random_state
+        )
+        
+        train_dataset = Dataset.from_dict({
+            "tokens": [[word for word in text.split()] for text in train_texts],
+            "ner_tags": train_tags
+        })
+        
+        val_dataset = Dataset.from_dict({
+            "tokens": [[word for word in text.split()] for text in val_texts],
+            "ner_tags": val_tags
+        })
+        
+        return train_dataset, val_dataset
+    
+    def _convert_annotations_to_tags(self, item):
+        """Конвертация аннотаций в метки токенов"""
+        text = item['text']
+        annotations = item['annotations']
+        tokens = text.split()
+        tags = ['O'] * len(tokens)
+        
+        for ann in annotations:
+            entity_text = text[ann['start']:ann['end']]
+            entity_tokens = entity_text.split()
+            
+            # Находим позицию entity в tokens
+            for i in range(len(tokens) - len(entity_tokens) + 1):
+                if tokens[i:i+len(entity_tokens)] == entity_tokens:
+                    tags[i] = f"B-{ann['label']}"
+                    for j in range(1, len(entity_tokens)):
+                        tags[i+j] = f"I-{ann['label']}"
+                    break
+        
+        return [self.label2id[tag] for tag in tags]
+    
+    def tokenize_and_align_labels(self, examples):
+        """Выравнивание меток с subword токенами"""
+        tokenized_inputs = self.tokenizer(
+            examples["tokens"],
+            truncation=True,
+            is_split_into_words=True,
+            padding="max_length",
+            max_length=self.config.max_length,
+        )
+        
+        labels = []
+        for i, label in enumerate(examples["ner_tags"]):
+            word_ids = tokenized_inputs.word_ids(batch_index=i)
+            previous_word_idx = None
+            label_ids = []
+            
+            for word_idx in word_ids:
+                if word_idx is None:
+                    label_ids.append(-100)
+                elif word_idx != previous_word_idx:
+                    label_ids.append(label[word_idx])
+                else:
+                    label_ids.append(-100)
+                previous_word_idx = word_idx
+            
+            labels.append(label_ids)
+        
+        tokenized_inputs["labels"] = labels
+        return tokenized_inputs
+    
+    def compute_metrics(self, eval_pred):
+        """Вычисление метрик"""
+        predictions, labels = eval_pred
+        predictions = np.argmax(predictions, axis=2)
+        
+        # Убираем padding токены
+        true_predictions = [
+            [self.id2label[p] for (p, l) in zip(prediction, label) if l != -100]
+            for prediction, label in zip(predictions, labels)
+        ]
+        true_labels = [
+            [self.id2label[l] for (p, l) in zip(prediction, label) if l != -100]
+            for prediction, label in zip(predictions, labels)
+        ]
+        
+        # Вычисляем метрики
+        precision = self._calculate_precision(true_predictions, true_labels)
+        recall = self._calculate_recall(true_predictions, true_labels)
+        f1 = self._calculate_f1(precision, recall)
+        
+        return {
+            "precision": precision,
+            "recall": recall,
+            "f1": f1
+        }
+    
+    def train(self, annotated_data):
+        """Процесс обучения"""
+        # Подготовка данных
+        train_dataset, val_dataset = self.prepare_datasets(annotated_data)
+        
+        # Токенизация
+        tokenized_train = train_dataset.map(
+            self.tokenize_and_align_labels,
+            batched=True,
+            remove_columns=train_dataset.column_names
+        )
+        
+        tokenized_val = val_dataset.map(
+            self.tokenize_and_align_labels,
+            batched=True,
+            remove_columns=val_dataset.column_names
+        )
+        
+        # Настройка training arguments
+        training_args = TrainingArguments(
+            output_dir=self.config.output_dir,
+            num_train_epochs=self.config.epochs,
+            per_device_train_batch_size=self.config.batch_size,
+            per_device_eval_batch_size=self.config.batch_size,
+            learning_rate=self.config.learning_rate,
+            weight_decay=0.01,
+            evaluation_strategy="epoch",
+            save_strategy="epoch",
+            load_best_model_at_end=True,
+            metric_for_best_model="f1",
+            greater_is_better=True,
+            logging_dir=f"{self.config.output_dir}/logs",
+            logging_steps=10,
+            report_to="none"
+        )
+        
+        # Data collator
+        data_collator = DataCollatorForTokenClassification(
+            tokenizer=self.tokenizer
+        )
+        
+        # Trainer
+        trainer = Trainer(
+            model=self.model,
+            args=training_args,
+            train_dataset=tokenized_train,
+            eval_dataset=tokenized_val,
+            tokenizer=self.tokenizer,
+            data_collator=data_collator,
+            compute_metrics=self.compute_metrics
+        )
+        
+        # Запуск обучения
+        logging.info("Starting training process...")
+        trainer.train()
+        
+        # Сохранение модели
+        trainer.save_model()
+        self.tokenizer.save_pretrained(self.config.output_dir)
+        
+        logging.info(f"Model saved to {self.config.output_dir}")

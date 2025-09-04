@@ -1,0 +1,19 @@
+data:
+  input_path: "/data/cv.json"
+  output_path: "/data/processed/"
+  batch_size: 500
+
+model:
+  name: "cointegrated/rubert-tiny2"
+  max_length: 512
+  confidence_threshold: 0.7
+
+processing:
+  use_cache: true
+  cache_ttl: 3600
+  max_workers: 4
+
+logging:
+  level: "INFO"
+  file: "pipeline.log"
+  rotation: "100MB"

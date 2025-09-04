@@ -4,13 +4,10 @@ from models import GenerateQuestionsRequest, GeneratedQuestions, FinalEvaluation
 import httpx
 
 router = APIRouter()
-OLLAMA_BASE_URL = "http://localhost:11434"  # Внутри контейнера llm-service
+OLLAMA_BASE_URL = "http://localhost:11434"
 
 @router.post("/api/generate_questions")
 async def generate_questions(request: GenerateQuestionsRequest):
-    """
-    Генерация вопросов на основе резюме и вакансии.
-    """
     prompt = f"""
     [INSTRUCTION]
     Ты - HR-специалист. На основе резюме кандидата и описания вакансии сгенерируй 5 точных и релевантных вопросов для собеседования.
@@ -47,9 +44,6 @@ async def generate_questions(request: GenerateQuestionsRequest):
 
 @router.post("/api/evaluate_answers")
 async def evaluate_answers(request: FinalEvaluationRequest):
-    """
-    Финальная оценка кандидата на основе ответов.
-    """
     # Формируем детальный промпт для оценки
     answers_context = "\n".join(
         [f"Вопрос: {q}\nОтвет: {a}\n" for q, a in zip(request.questions, request.user_answers)]
