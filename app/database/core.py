@@ -30,7 +30,7 @@ class Base(DeclarativeBase):
 
 
 engine = create_async_engine(
-    config.POSTGRES_URL, poolclass=NullPool, pool_pre_ping=True
+    config.DATABASE_URL, poolclass=NullPool, pool_pre_ping=True
 )
 async_session = async_sessionmaker(
     class_=AsyncSession,
@@ -41,6 +41,5 @@ async_session = async_sessionmaker(
 
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session() as session:
-        async with session.begin():
-            yield session
+    async with async_session() as session, session.begin():
+        yield session

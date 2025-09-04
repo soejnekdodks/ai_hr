@@ -1,4 +1,10 @@
 include .env
+include alembic/Makefile
+
+DOCKER_COMPOSE_RUN=docker compose run --rm app
+
+build:
+	docker compose build
 
 up:
 	docker compose -f docker-compose.yml up --build
