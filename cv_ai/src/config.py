@@ -102,8 +102,14 @@ class Config(BaseSettings):
         description="Путь до датасета", default="./dataset/cv.json"
     )
     ENV: str = Field(description="Окружение: dev, prod", default="dev")
-    PATH_TO_TEST_VACANCY: str = Field(description="Путь до тестовой вакансии", default="/Users/brmstr/Repos/ai_hr/ai_hr/cv_ai/src/dataset/вакансия.txt")
-    PATH_TO_TEST_RESUME: str = Field(description="Путь до тестового резюме", default="/Users/brmstr/Repos/ai_hr/ai_hr/cv_ai/src/dataset/резюме.txt")
+    PATH_TO_TEST_VACANCY: str = Field(
+        description="Путь до тестовой вакансии",
+        default="/Users/brmstr/Repos/ai_hr/ai_hr/cv_ai/src/dataset/вакансия.txt",
+    )
+    PATH_TO_TEST_RESUME: str = Field(
+        description="Путь до тестового резюме",
+        default="/Users/brmstr/Repos/ai_hr/ai_hr/cv_ai/src/dataset/резюме.txt",
+    )
 
 
 config = Config()

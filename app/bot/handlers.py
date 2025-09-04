@@ -1,9 +1,9 @@
-from aiogram import Router, F
-from aiogram.types import Message
+from aiogram import F, Router
 from aiogram.filters import Command
-
+from aiogram.types import Message
 
 router = Router()
+
 
 @router.message(Command("start", "help"))
 async def cmd_start_help(message: Message):

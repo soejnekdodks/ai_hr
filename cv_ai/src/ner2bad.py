@@ -1,8 +1,9 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from peft import PeftModel
-import torch
 import re
+
+import torch
 from config import config
+from peft import PeftModel
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 class ResumeParser:

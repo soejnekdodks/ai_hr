@@ -1,16 +1,16 @@
 import json
-import torch
+
 import numpy as np
-from transformers import (
-    AutoTokenizer,
-    AutoModelForTokenClassification,
-    TrainingArguments,
-    Trainer,
-    DataCollatorForTokenClassification,
-)
 from datasets import Dataset
-from sklearn.model_selection import train_test_split
 from seqeval.metrics import f1_score, precision_score, recall_score
+from sklearn.model_selection import train_test_split
+from transformers import (
+    AutoModelForTokenClassification,
+    AutoTokenizer,
+    DataCollatorForTokenClassification,
+    Trainer,
+    TrainingArguments,
+)
 
 
 class IncrementalNERTrainer:
