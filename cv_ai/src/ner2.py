@@ -1,6 +1,3 @@
-import os
-from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
-from transformers import AutoConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
 import torch
@@ -8,6 +5,7 @@ import json
 import re
 from typing import Dict, List
 from config import config
+
 
 def _build_json_instruction(mode: str) -> str:
     if mode == "resume":
@@ -25,68 +23,7 @@ def _build_json_instruction(mode: str) -> str:
             "условия (CONDITION), технические навыки (SKILL, TOOL, LANGUAGE), "
             "soft skills (SOFT_SKILL), локацию (LOCATION)."
         )
-    return task
 
-class NERModel:
-    def __init__(self, model_path=None):
-        self.id_to_label = {i: label for i, label in enumerate(config.LABELS)}
-        self.label_to_id = {label: i for i, label in enumerate(config.LABELS)}
-
-        if model_path and os.path.exists(model_path):
-            self.__load_model(model_path)
-        else:
-            self.__initialize_model()
-
-    def __initialize_model(self):
-        """Инициализация новой модели"""
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            config.TOKEN_MODEL_NAME, add_prefix_space=True
-        )
-
-        # Конфигурация модели
-        model_config = AutoConfig.from_pretrained(
-            config.TOKEN_MODEL_NAME,
-            num_labels=len(config.LABELS),
-            id2label=self.id_to_label,
-            label2id=self.label_to_id,
-        )
-
-        # Загрузка модели
-        self.model = AutoModelForTokenClassification.from_pretrained(
-            config.TOKEN_MODEL_NAME, config=model_config
-        )
-
-        # Создание pipeline для удобства
-        self.pipeline = pipeline(
-            "token-classification",
-            model=self.model,
-            tokenizer=self.tokenizer,
-            aggregation_strategy="simple",
-        )
-
-    def __load_model(self, model_path):
-        """Загрузка сохраненной модели"""
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-
-        model_config = AutoConfig.from_pretrained(
-            model_path,
-            num_labels=len(config.LABELS),
-            id2label=self.id_to_label,
-            label2id=self.label_to_id,
-        )
-
-        # 🔑 добавлен ignore_mismatched_sizes=True
-        self.model = AutoModelForTokenClassification.from_pretrained(
-            model_path, config=model_config, ignore_mismatched_sizes=True
-        )
-
-        self.pipeline = pipeline(
-            "token-classification",
-            model=self.model,
-            tokenizer=self.tokenizer,
-            aggregation_strategy="simple",
-        )
-=======
     labels_hint = ", ".join(config.LABELS)
     example = {
         "SKILL": [],
@@ -94,9 +31,9 @@ class NERModel:
         "EXPERIENCE": [],
         "PERSON": [],
         "LOCATION": [],
-        "SOFT_SKILL": []
+        "SOFT_SKILL": [],
     }
-    
+
     return (
         f"{task}. Верните СТРОГО валидный JSON со структурами:\n"
         f"{json.dumps(example, ensure_ascii=False)}\n"
@@ -107,13 +44,12 @@ class NERModel:
         f"— Допустимые ключи: {labels_hint}.\n"
     )
 
+
 class ResumeParser:
     def __init__(self):
         # Загружаем базовую модель + LoRA
         base = AutoModelForCausalLM.from_pretrained(
-            config.BASE_MODEL,
-            torch_dtype=torch.float16,
-            device_map="auto"
+            config.BASE_MODEL, torch_dtype=torch.float16, device_map="auto"
         )
         tokenizer = AutoTokenizer.from_pretrained(config.BASE_MODEL)
         self.model = PeftModel.from_pretrained(base, config.LORA_MODEL)
@@ -164,7 +100,7 @@ class ResumeParser:
             else:
                 result[k] = []
         return result
-        
+
     @staticmethod
     def _normalize(items: List[str]) -> List[str]:
         out = []
@@ -180,14 +116,11 @@ class ResumeParser:
                 uniq.append(x)
                 seen.add(x)
         return uniq
-        
+
     def _run_model(self, prompt: str) -> str:
         """Запускает модель и возвращает сырой текст (без постобработки)."""
         inputs = self.tokenizer(
-            prompt,
-            return_tensors="pt",
-            truncation=True,
-            max_length=2048
+            prompt, return_tensors="pt", truncation=True, max_length=2048
         ).to(self.model.device)
 
         with torch.no_grad():
@@ -200,8 +133,7 @@ class ResumeParser:
             )
 
         raw = self.tokenizer.decode(
-            out[0][inputs.input_ids.shape[-1]:],
-            skip_special_tokens=True
+            out[0][inputs.input_ids.shape[-1] :], skip_special_tokens=True
         )
         return raw
 

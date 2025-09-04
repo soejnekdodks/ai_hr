@@ -6,7 +6,7 @@ from transformers import (
     AutoModelForTokenClassification,
     TrainingArguments,
     Trainer,
-    DataCollatorForTokenClassification
+    DataCollatorForTokenClassification,
 )
 from datasets import Dataset
 from sklearn.model_selection import train_test_split
@@ -24,19 +24,21 @@ class IncrementalNERTrainer:
             список новых лейблов (например ["B-EXPERIENCE", "I-EXPERIENCE"])
         """
         self.config = config
-        self.tokenizer = AutoTokenizer.from_pretrained(config['model_name'])
+        self.tokenizer = AutoTokenizer.from_pretrained(config["model_name"])
 
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
         # Загружаем модель
-        base_model = AutoModelForTokenClassification.from_pretrained(config['model_name'])
+        base_model = AutoModelForTokenClassification.from_pretrained(
+            config["model_name"]
+        )
 
         old_id2label = base_model.config.id2label
         old_label2id = base_model.config.label2id
 
         # Обновляем список лейблов
-        all_labels = config['labels'].copy()
+        all_labels = config["labels"].copy()
         if new_labels:
             for lbl in new_labels:
                 if lbl not in all_labels:
@@ -48,20 +50,22 @@ class IncrementalNERTrainer:
 
         # Если количество лейблов изменилось — переинициализируем classification head
         if len(self.labels) != base_model.num_labels:
-            print(f"⚠️ Меняем число классов: {base_model.num_labels} → {len(self.labels)}")
+            print(
+                f"⚠️ Меняем число классов: {base_model.num_labels} → {len(self.labels)}"
+            )
 
             self.model = AutoModelForTokenClassification.from_pretrained(
-                config['model_name'],
+                config["model_name"],
                 num_labels=len(self.labels),
                 id2label=self.id2label,
                 label2id=self.label2id,
-                ignore_mismatched_sizes=True  # ⚠️ важно!
+                ignore_mismatched_sizes=True,  # ⚠️ важно!
             )
         else:
             self.model = base_model
 
     def load_dataset(self, dataset_path):
-        with open(dataset_path, 'r', encoding='utf-8') as f:
+        with open(dataset_path, "r", encoding="utf-8") as f:
             return json.load(f)
 
     def prepare_datasets(self, annotated_data):
@@ -70,14 +74,14 @@ class IncrementalNERTrainer:
         all_labels = []
 
         for item in annotated_data:
-            text = item['text']
-            annotations = item['annotations']
+            text = item["text"]
+            annotations = item["annotations"]
 
             # char-level метки
-            char_labels = ['O'] * len(text)
+            char_labels = ["O"] * len(text)
             for ann in annotations:
-                start, end = ann['start'], ann['end']
-                label = ann['label']
+                start, end = ann["start"], ann["end"]
+                label = ann["label"]
                 if start < end <= len(text):
                     char_labels[start] = f"B-{label}"
                     for i in range(start + 1, end):
@@ -89,7 +93,7 @@ class IncrementalNERTrainer:
                 truncation=True,
                 max_length=512,
                 return_offsets_mapping=True,
-                add_special_tokens=False
+                add_special_tokens=False,
             )
 
             token_labels = []
@@ -110,14 +114,17 @@ class IncrementalNERTrainer:
         return train_tokens, val_tokens, train_labels, val_labels
 
     def tokenize_and_align_labels(self, examples):
-        texts = [self.tokenizer.decode(t, skip_special_tokens=True) for t in examples["tokens"]]
+        texts = [
+            self.tokenizer.decode(t, skip_special_tokens=True)
+            for t in examples["tokens"]
+        ]
         tokenized_inputs = self.tokenizer(
             texts,
             truncation=True,
             padding=True,
             max_length=512,
             return_tensors="pt",
-            is_split_into_words=False
+            is_split_into_words=False,
         )
 
         labels = []
@@ -149,29 +156,35 @@ class IncrementalNERTrainer:
         return {
             "precision": precision_score(true_labels, true_preds),
             "recall": recall_score(true_labels, true_preds),
-            "f1": f1_score(true_labels, true_preds)
+            "f1": f1_score(true_labels, true_preds),
         }
 
     def train(self, train_data, val_data):
-        train_dataset = Dataset.from_dict({"tokens": train_data[0], "ner_tags": train_data[1]})
-        val_dataset = Dataset.from_dict({"tokens": val_data[0], "ner_tags": val_data[1]})
+        train_dataset = Dataset.from_dict(
+            {"tokens": train_data[0], "ner_tags": train_data[1]}
+        )
+        val_dataset = Dataset.from_dict(
+            {"tokens": val_data[0], "ner_tags": val_data[1]}
+        )
 
-        tokenized_train = train_dataset.map(self.tokenize_and_align_labels, batched=True)
+        tokenized_train = train_dataset.map(
+            self.tokenize_and_align_labels, batched=True
+        )
         tokenized_val = val_dataset.map(self.tokenize_and_align_labels, batched=True)
 
         args = TrainingArguments(
-            output_dir=self.config['output_dir'],
-            num_train_epochs=self.config['epochs'],
-            per_device_train_batch_size=self.config['batch_size'],
-            per_device_eval_batch_size=self.config['batch_size'],
-            learning_rate=self.config['learning_rate'],
+            output_dir=self.config["output_dir"],
+            num_train_epochs=self.config["epochs"],
+            per_device_train_batch_size=self.config["batch_size"],
+            per_device_eval_batch_size=self.config["batch_size"],
+            learning_rate=self.config["learning_rate"],
             weight_decay=0.01,
             eval_strategy="epoch",
             save_strategy="epoch",
             load_best_model_at_end=True,
             metric_for_best_model="f1",
             greater_is_better=True,
-            logging_steps=50
+            logging_steps=50,
         )
 
         trainer = Trainer(
@@ -181,26 +194,38 @@ class IncrementalNERTrainer:
             eval_dataset=tokenized_val,
             tokenizer=self.tokenizer,
             data_collator=DataCollatorForTokenClassification(tokenizer=self.tokenizer),
-            compute_metrics=self.compute_metrics
+            compute_metrics=self.compute_metrics,
         )
 
         trainer.train()
-        trainer.save_model(self.config['output_dir'])
+        trainer.save_model(self.config["output_dir"])
         return trainer
 
 
 config = {
     "model_name": "FacebookAI/xlm-roberta-large-finetuned-conll03-german",  # можно путь к своей модели
-    "labels": ["O", "B-LOCATION", "I-LOCATION", "B-EDUCATION", "I-EDUCATION", "B-PERSON", "I-PERSON"],
+    "labels": [
+        "O",
+        "B-LOCATION",
+        "I-LOCATION",
+        "B-EDUCATION",
+        "I-EDUCATION",
+        "B-PERSON",
+        "I-PERSON",
+    ],
     "output_dir": "/Users/brmstr/Repos/ai_hr/ai_hr/cv_ai/src/ner_model",
     "epochs": 3,
     "batch_size": 16,
-    "learning_rate": 3e-5
+    "learning_rate": 3e-5,
 }
 
 trainer = IncrementalNERTrainer(config, new_labels=["B-EXPERIENCE", "I-EXPERIENCE"])
 
-annotated_data = trainer.load_dataset("/Users/brmstr/Repos/ai_hr/ai_hr/cv_ai/src/dataset/dataset_30000.json")
-train_tokens, val_tokens, train_labels, val_labels = trainer.prepare_datasets(annotated_data)
+annotated_data = trainer.load_dataset(
+    "/Users/brmstr/Repos/ai_hr/ai_hr/cv_ai/src/dataset/dataset_30000.json"
+)
+train_tokens, val_tokens, train_labels, val_labels = trainer.prepare_datasets(
+    annotated_data
+)
 
 trainer.train([train_tokens, train_labels], [val_tokens, val_labels])
