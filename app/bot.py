@@ -1,10 +1,31 @@
+from io import BytesIO
 import os
 from aiogram import Router, F
 from aiogram.types import Message, FSInputFile
 from aiogram.filters import Command
+import asyncio
+import logging
+from aiogram import Bot, Dispatcher
+from aiogram.fsm.storage.memory import MemoryStorage
+import zipfile
+
+import pdfplumber
+from io import BytesIO
 
 # Создаем роутер для обработчиков
 router = Router()
+
+
+
+async def extract_text_from_pdf(bot, file_id):
+    file = await bot.get_file(file_id)
+    downloaded = await bot.download_file(file.file_path)
+    
+    text = ""
+    with pdfplumber.open(BytesIO(downloaded.read())) as pdf:
+        for page in pdf.pages:
+            text += page.extract_text() + "\n"
+    return text.strip()
 
 # Обработчики команд /start и /help
 @router.message(Command("start", "help"))
@@ -24,46 +45,43 @@ async def cmd_start_help(message: Message):
 
 # Обработчик для файлов с вакансиями
 @router.message(F.document & (F.document.file_name.endswith('.txt') | F.document.file_name.endswith('.pdf')))
-async def handle_vacancy_file(message: Message):
-    """
-    Обрабатывает загруженный файл вакансии (.txt или .pdf).
-    Сохраняет информацию о загрузке в глобальную область видимости (в реальном проекте используйте БД!).
-    """
+async def handle_vacancy_file(message: Message, bot: Bot):
     file_id = message.document.file_id
     file_name = message.document.file_name
 
-    # Временное хранилище (в реальном проекте используйте БД или FSM)
     user_data = user_file_storage.get(message.from_user.id, {})
-    user_data['vacancy_file'] = {'id': file_id, 'name': file_name}
+    
+    if file_name.lower().endswith(".pdf"):
+        text = await extract_text_from_pdf(bot, file_id)
+    else:
+        file = await bot.get_file(file_id)
+        downloaded = await bot.download_file(file.file_path)
+        text = downloaded.read().decode("utf-8")
+    
+    user_data['vacancy_file'] = {'id': file_id, 'name': file_name, 'text': text}
     user_file_storage[message.from_user.id] = user_data
 
-    await message.answer(f"✅ Вакансия `{file_name}` принята! Теперь загрузите ZIP-архив с резюме.")
+    await message.answer(f"✅ Вакансия `{file_name}` загружена. Текст сохранён. Теперь загрузите ZIP-архив с резюме.")
 
-# Обработчик для ZIP-архивов с резюме
+
 @router.message(F.document & F.document.file_name.endswith('.zip'))
-async def handle_resume_zip(message: Message):
-    """
-    Обрабатывает загруженный ZIP-архив с резюме.
-    Проверяет, была ли загружена вакансия ранее.
-    """
-    user_id = message.from_user.id
+async def handle_resume_zip(message: Message, bot: Bot):
+    hr_id = message.from_user.id
     file_name = message.document.file_name
 
-    # Проверяем, загружена ли вакансия
-    user_data = user_file_storage.get(user_id, {})
+    user_data = user_file_storage.get(hr_id, {})
     if 'vacancy_file' not in user_data:
         await message.answer("❌ Сначала загрузите файл с вакансией (.txt или .pdf)!")
         return
 
-    # Сохраняем информацию об архиве
     user_data['resume_zip'] = {'id': message.document.file_id, 'name': file_name}
-    user_file_storage[user_id] = user_data
+    user_file_storage[hr_id] = user_data
 
     await message.answer(
         f"✅ Архив `{file_name}` с резюме принят!\n"
         f"💼 Вакансия: `{user_data['vacancy_file']['name']}`\n"
-        "🎉 Все файлы получены. Обработка завершена!"
     )
+
 
 # Обработчик для любых других документов (не тех, что нужны)
 @router.message(F.document)
@@ -85,11 +103,24 @@ async def handle_text(message: Message):
 # В реальном проекте используйте базу данных или FSMContext!
 user_file_storage = {}
 
+async def employee_divider(hr_id: str | int) -> bool:
+    vacancy = user_file_storage[hr_id]["vacancy_file"]
 
-import asyncio
-import logging
-from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.memory import MemoryStorage
+    zip_file_id = user_file_storage[hr_id]["resume_zip"]["id"]
+    file = await bot.get_file(zip_file_id)
+    downloaded = await bot.download_file(file.file_path)
+    with zipfile.ZipFile(BytesIO(downloaded.read())) as archive:
+        for name in archive.namelist():
+            if name.lower().endswith(".pdf"):
+                with archive.open(name) as pdf_file:
+                    with pdfplumber.open(pdf_file) as pdf:
+                        pass
+                        # TODO для каждого кандидата сделать свой uuid и соответствующей к нему текстовый файл
+                        # Надо завтра перейти в бд побыстрому
+                        # + С нейронкой все в полном порядке. Вся логика в api. 
+                        # Передаешь текстовые файлы резюме и вакансии и кайфуешь
+                        # Отбор >0.70-75
+
 
 # Импортируем наш конфиг и роутеры из handlers
 
