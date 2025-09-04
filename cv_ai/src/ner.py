@@ -1,94 +1,96 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from peft import PeftModel
 import torch
 import json
 import re
 from typing import Dict, List
 from config import config
 
+
 def _build_json_instruction(mode: str) -> str:
+    """Формирует инструкцию для модели."""
     if mode == "resume":
         task = (
-            "Извлеките из текста резюме кандидата атомарные данные. "
-            "Заполните ФИО (PERSON), контакты (CONTACT, BIRTHDATE, LOCATION), "
-            "образование (UNIVERSITY, DEGREE, GRAD_YEAR, EDUCATION), "
-            "опыт работы (COMPANY, POSITION, YEARS, EXPERIENCE, ACHIEVEMENT), "
-            "навыки (SKILL, TOOL, LANGUAGE, SOFT_SKILL)."
+            "Extract atomic data from the candidate's resume text. "
+            "Fill in PERSON, CONTACT, BIRTHDATE, LOCATION, EDUCATION "
+            "(UNIVERSITY, DEGREE, GRAD_YEAR), EXPERIENCE "
+            "(COMPANY, POSITION, YEARS, ACHIEVEMENT), SKILL, TOOL, LANGUAGE, SOFT_SKILL."
         )
     else:
         task = (
-            "Извлеките из текста вакансии атомарные требования и условия. "
-            "Заполните требования (REQUIREMENT), обязанности (RESPONSIBILITY), "
-            "условия (CONDITION), технические навыки (SKILL, TOOL, LANGUAGE), "
-            "soft skills (SOFT_SKILL), локацию (LOCATION)."
+            "Extract atomic requirements and conditions from the job description. "
+            "Fill in REQUIREMENT, RESPONSIBILITY, CONDITION, SKILL, TOOL, LANGUAGE, "
+            "SOFT_SKILL, and LOCATION."
         )
 
     labels_hint = ", ".join(config.LABELS)
-    example = {
-        "SKILL": [],
-        "EDUCATION": [],
-        "EXPERIENCE": [],
-        "PERSON": [],
-        "LOCATION": [],
-        "SOFT_SKILL": []
-    }
-    
+    example = {k: [] for k in config.LABELS}
+
     return (
-        f"{task}. Верните СТРОГО валидный JSON со структурами:\n"
-        f"{json.dumps(example, ensure_ascii=False)}\n"
-        f"Требования:\n"
-        f"— Только JSON, без комментариев и объяснений.\n"
-        f"— Каждый элемент списка должен быть коротким и атомарным.\n"
-        f"— Не придумывайте данные. Если раздел пуст, верните пустой список.\n"
-        f"— Допустимые ключи: {labels_hint}.\n"
+        f"{task}\n"
+        f"Return STRICTLY valid JSON with this structure:\n"
+        f"{json.dumps(example, ensure_ascii=False)}\n\n"
+        f"Rules:\n"
+        f"- JSON only, no comments or explanations.\n"
+        f"- Each list item must be short and atomic.\n"
+        f"- Do not invent data. If a section is empty, return [].\n"
+        f"- Valid keys: {labels_hint}.\n"
     )
+
 
 class ResumeParser:
     def __init__(self):
-        # Загружаем базовую модель + LoRA
-        base = AutoModelForCausalLM.from_pretrained(
+        # Загружаем модель
+        self.model = AutoModelForCausalLM.from_pretrained(
             config.BASE_MODEL,
             torch_dtype=torch.float16,
             device_map="auto"
         )
-        tokenizer = AutoTokenizer.from_pretrained(config.BASE_MODEL)
-        self.model = PeftModel.from_pretrained(base, config.LORA_MODEL)
-        self.tokenizer = tokenizer
+        self.tokenizer = AutoTokenizer.from_pretrained(config.BASE_MODEL)
         self.model.eval()
 
-        # В некоторых сборках Qwen3 нет eos_token_id — защитимся
+        # На всякий случай
         self.eos_token_id = getattr(self.tokenizer, "eos_token_id", None)
 
-    def __build_prompt(self, text: str, mode: str = "resume") -> str:
-        # Используем рекомендованный на странице модели ChatML-формат
-        # и явно запрещаем размышления / chain-of-thought.
+    def __build_prompt(self, text: str, mode: str) -> str:
+        """Формирует ChatML-промпт."""
         instruction = _build_json_instruction(mode)
         return (
-            f"<|im_start|>system{config.SYSTEM_PROMPT}<|im_end|>"
-            f"<|im_start|>user{instruction}Текст:{text}<|im_end|>"
-            f"<|im_start|>assistant"
+            f"<|im_start|>system\n{config.SYSTEM_PROMPT}<|im_end|>"
+            f"<|im_start|>user\n{instruction}\n{text}<|im_end|>"
+            f"<|im_start|>assistant\n"
         )
+
+    def _run_model(self, prompt: str, max_new_tokens: int = 768) -> str:
+        """Запуск генерации."""
+        inputs = self.tokenizer(
+            prompt,
+            return_tensors="pt",
+            truncation=True,
+            max_length=2048
+        ).to(self.model.device)
+
+        with torch.no_grad():
+            out = self.model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                do_sample=False,
+                temperature=0.0,
+                eos_token_id=self.eos_token_id,
+            )
+
+        raw = self.tokenizer.decode(
+            out[0][inputs.input_ids.shape[-1]:],
+            skip_special_tokens=True
+        )
+        return raw.strip()
 
     @staticmethod
     def _json_only(s: str) -> Dict[str, List[str]]:
-        def _default():
-            return {k: [] for k in config.LABELS}
-
+        """Попробовать распарсить JSON и нормализовать."""
         try:
             obj = json.loads(s)
         except Exception:
-            # fallback — ищем первый большой блок {...}
-            matches = re.findall(r"\{.*\}", s, flags=re.DOTALL)
-            if not matches:
-                return _default()
-            for frag in matches:
-                try:
-                    obj = json.loads(frag)
-                    break
-                except Exception:
-                    continue
-            else:
-                return _default()
+            return {k: [] for k in config.LABELS}
 
         result = {}
         for k in config.LABELS:
@@ -100,9 +102,10 @@ class ResumeParser:
             else:
                 result[k] = []
         return result
-        
+
     @staticmethod
     def _normalize(items: List[str]) -> List[str]:
+        """Нормализация строк."""
         out = []
         for x in items:
             x = str(x).strip().lower()
@@ -116,57 +119,14 @@ class ResumeParser:
                 uniq.append(x)
                 seen.add(x)
         return uniq
-        
-    def _run_model(self, prompt: str) -> str:
-        """Запускает модель и возвращает сырой текст (без постобработки)."""
-        inputs = self.tokenizer(
-            prompt,
-            return_tensors="pt",
-            truncation=True,
-            max_length=2048
-        ).to(self.model.device)
-
-        with torch.no_grad():
-            out = self.model.generate(
-                **inputs,
-                max_new_tokens=384,
-                do_sample=False,  # детерминированный вывод
-                temperature=0.0,
-                eos_token_id=self.eos_token_id,
-            )
-
-        raw = self.tokenizer.decode(
-            out[0][inputs.input_ids.shape[-1]:],
-            skip_special_tokens=True
-        )
-        return raw
 
     def extract_entities(self, text: str, mode: str = "resume") -> dict:
-        """
-        Возвращает dict с ключами из config.LABELS.
-        Двухшаговый подход:
-        1. Прогрев — модель думает, но выводит только 'OK'.
-        2. Основной шаг — модель выдаёт чистый JSON.
-        """
-
-        # 1. Прогрев
-        warmup_prompt = (
-            f"<|im_start|>system{config.SYSTEM_PROMPT}<|im_end|>"
-            f"<|im_start|>Сначала проанализируй текст и подумай, какие данные нужно извлечь. "
-            f"Выведи только 'OK'. Текст: {text}<|im_end|>"
-            f"<|im_start|>assistant"
-        )
-        _ = self._run_model(warmup_prompt)
-
-        # 2. Основной вызов
+        """Основной метод — получить JSON со структурой."""
         prompt = self.__build_prompt(text, mode)
         raw = self._run_model(prompt)
 
-        raw = raw.lstrip(" :\n\t")
-        raw = raw.replace("```json", "").replace("```", "")
-        raw = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL).strip()
-
-        print(raw)
+        # Иногда модель добавляет ```json блок
+        raw = raw.replace("```json", "").replace("```", "").strip()
 
         data = self._json_only(raw)
         return {k: self._normalize(v) for k, v in data.items()}

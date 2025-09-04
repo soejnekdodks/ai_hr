@@ -12,12 +12,8 @@ class Config(BaseSettings):
 
     # Базовая модель + адаптер
     BASE_MODEL: str = Field(
-        default="Qwen/Qwen3-0.6B",
+        default="Qwen/Qwen1.5-4B-Chat",
         description="Базовая LLM модель"
-    )
-    LORA_MODEL: str = Field(
-        default="antontuzov/liza-06-resume-russian",
-        description="LoRA-адаптер для анализа резюме"
     )
 
     # Модель эмбеддингов для семантического сравнения
@@ -43,8 +39,9 @@ class Config(BaseSettings):
     # Системный промпт и формат ответа
     SYSTEM_PROMPT: str = Field(
         default=(
-            "Вы — строгий экстрактор полуструктурированных резюме и вакансий. "
-            "Отвечайте только валидным JSON без комментариев и размышлений."
+            "You must always respond ONLY with valid JSON object."
+            "Do not repeat input text. Do not output explanations."
+            "If unsure — return empty lists."
         ),
         description="Системные инструкции для модели"
     )
