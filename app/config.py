@@ -6,7 +6,10 @@ class Config(BaseConfig):
         super().__init__(*args, **kwargs)
         self.__change_documantation_urls()
 
-    TG_TOKEN: str = Field(description="Токен для тг бота", default="8152863814:AAE_efaQn_0B3spZtcY2dIgEx3Mb07wiaoY")
+    TG_TOKEN: str = Field(
+        description="Токен для тг бота",
+        default="8152863814:AAE_efaQn_0B3spZtcY2dIgEx3Mb07wiaoY",
+    )
     HOST_URL: str = Field(
         description="URL по которому можно получить доступ к приложению"
     )
@@ -17,5 +20,6 @@ class Config(BaseConfig):
     DATABASE_URL: str = Field(description="URL для доступа к бд")
     BOT_USERNAME: str = Field(description="Username бота в телеграм")
     LLM: str = Field(description="Используемая llm", default="llama3")
+
 
 config = Config()
