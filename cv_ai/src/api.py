@@ -1,5 +1,5 @@
-from main_pipeline import ResumeVacancyMatcher
 from config import config
+from main_pipeline import ResumeVacancyMatcher
 
 
 def cv_analize(resume_text: str, vacancy_text: str) -> dict:
