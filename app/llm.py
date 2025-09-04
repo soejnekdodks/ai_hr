@@ -1,7 +1,8 @@
 import httpx
-from config import config
 from fastapi import APIRouter, HTTPException
-from logury import logger
+from loguru import logger
+
+from app.config import config
 
 router = APIRouter()
 

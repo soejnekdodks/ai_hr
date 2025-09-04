@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import query
 from app.database.core import get_async_session
 from app.enums import InterviewState
-from app.presentation.models import QuestionsResponse, Question, AnswersRequest
+from app.presentation.models import AnswersRequest, Question, QuestionsResponse
 
 router = APIRouter()
 
