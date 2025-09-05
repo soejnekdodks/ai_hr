@@ -1,9 +1,6 @@
-import json
-import os
 import re
-from typing import Dict, List
-
 import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from config import config
 from peft import PeftModel
 from transformers import (
@@ -15,24 +12,8 @@ from transformers import (
 )
 
 
-def _build_json_instruction(mode: str) -> str:
-    if mode == "resume":
-        task = (
-            "Извлеките из текста резюме кандидата атомарные данные. "
-            "Заполните ФИО (PERSON), контакты (CONTACT, BIRTHDATE, LOCATION), "
-            "образование (UNIVERSITY, DEGREE, GRAD_YEAR, EDUCATION), "
-            "опыт работы (COMPANY, POSITION, YEARS, EXPERIENCE, ACHIEVEMENT), "
-            "навыки (SKILL, TOOL, LANGUAGE, SOFT_SKILL)."
-        )
-    else:
-        task = (
-            "Извлеките из текста вакансии атомарные требования и условия. "
-            "Заполните требования (REQUIREMENT), обязанности (RESPONSIBILITY), "
-            "условия (CONDITION), технические навыки (SKILL, TOOL, LANGUAGE), "
-            "soft skills (SOFT_SKILL), локацию (LOCATION)."
-        )
-    return task
 
+<<<<<<< HEAD
 
 class NERModel:
     def __init__(self, model_path=None):
@@ -116,29 +97,33 @@ class ResumeParser:
             f"<|im_start|>system{config.SYSTEM_PROMPT}<|im_end|>"
             f"<|im_start|>user{instruction}Текст:{text}<|im_end|>"
             f"<|im_start|>assistant"
+=======
+class ResumeVacancyAnalyze:
+    def __init__(self, model_name: str = None, device_map="auto"):
+        self.model_name = model_name or config.BASE_MODEL
+
+        # Загружаем модель
+        self.model = AutoModelForCausalLM.from_pretrained(
+            self.model_name,
+            torch_dtype=torch.float16,
+            device_map=device_map,
+            trust_remote_code=True,
+>>>>>>> app_branch
         )
 
-    @staticmethod
-    def _json_only(s: str) -> Dict[str, List[str]]:
-        def _default():
-            return {k: [] for k in config.LABELS}
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.model_name,
+            trust_remote_code=True
+        )
 
-        try:
-            obj = json.loads(s)
-        except Exception:
-            # fallback — ищем первый большой блок {...}
-            matches = re.findall(r"\{.*\}", s, flags=re.DOTALL)
-            if not matches:
-                return _default()
-            for frag in matches:
-                try:
-                    obj = json.loads(frag)
-                    break
-                except Exception:
-                    continue
+        if self.tokenizer.pad_token_id is None:
+            if self.tokenizer.eos_token_id is not None:
+                self.tokenizer.pad_token = self.tokenizer.eos_token
             else:
-                return _default()
+                self.tokenizer.add_special_tokens({"pad_token": "[PAD]"})
+                self.model.resize_token_embeddings(len(self.tokenizer))
 
+<<<<<<< HEAD
         result = {}
         for k in config.LABELS:
             val = obj.get(k, [])
@@ -171,47 +156,53 @@ class ResumeParser:
         inputs = self.tokenizer(
             prompt, return_tensors="pt", truncation=True, max_length=2048
         ).to(self.model.device)
+=======
+    def _run_model(self, prompt: str, max_new_tokens: int = 128) -> str:
+        inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True)
+        device = next(self.model.parameters()).device
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+>>>>>>> app_branch
 
         with torch.no_grad():
+            # Параметры генерации передаются напрямую в generate
             out = self.model.generate(
                 **inputs,
-                max_new_tokens=384,
-                do_sample=False,  # детерминированный вывод
+                max_new_tokens=max_new_tokens,
+                do_sample=False,  # Параметры передаются напрямую
                 temperature=0.0,
-                eos_token_id=self.eos_token_id,
+                top_p=0.95,
+                eos_token_id=self.tokenizer.eos_token_id,
+                pad_token_id=self.tokenizer.pad_token_id,
             )
+        text = self.tokenizer.decode(out[0], skip_special_tokens=True)
+        return text
 
+<<<<<<< HEAD
         raw = self.tokenizer.decode(
             out[0][inputs.input_ids.shape[-1] :], skip_special_tokens=True
+=======
+    def score_resume_vs_job(self, resume_text: str, vacancy_text: str) -> float:
+        prompt = (
+            "No eplanation and extra text!"
+            "Vacancy:\n"
+            f"{vacancy_text}\n\n"
+            "Resume:\n"
+            f"{resume_text}\n\n"
+            "You are an strict hr assistant that compares a candidate resume and a job vacancy. "
+            "Return a single number between 0 and 100 — the percent match (no explanation).\n"
+            "Answer with a single number only."
+>>>>>>> app_branch
         )
-        return raw
 
-    def extract_entities(self, text: str, mode: str = "resume") -> dict:
-        """
-        Возвращает dict с ключами из config.LABELS.
-        Двухшаговый подход:
-        1. Прогрев — модель думает, но выводит только 'OK'.
-        2. Основной шаг — модель выдаёт чистый JSON.
-        """
+        raw_output = self._run_model(prompt) # Прогнали модель на промпте
+        raw_output = self._run_model(prompt) # Она дала результат
 
-        # 1. Прогрев
-        warmup_prompt = (
-            f"<|im_start|>system{config.SYSTEM_PROMPT}<|im_end|>"
-            f"<|im_start|>Сначала проанализируй текст и подумай, какие данные нужно извлечь. "
-            f"Выведи только 'OK'. Текст: {text}<|im_end|>"
-            f"<|im_start|>assistant"
-        )
-        _ = self._run_model(warmup_prompt)
+        numbers = re.findall(r"\d+(?:[\.,]\d+)?", raw_output)
+        if numbers:
+            try:
+                num = float(numbers[0].replace(',', '.'))
+                return min(max(num, 0.0), 100.0)
+            except ValueError:
+                pass
 
-        # 2. Основной вызов
-        prompt = self.__build_prompt(text, mode)
-        raw = self._run_model(prompt)
-
-        raw = raw.lstrip(" :\n\t")
-        raw = raw.replace("```json", "").replace("```", "")
-        raw = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL).strip()
-
-        print(raw)
-
-        data = self._json_only(raw)
-        return {k: self._normalize(v) for k, v in data.items()}
+        return 0.0
