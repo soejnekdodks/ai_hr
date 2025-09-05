@@ -114,25 +114,6 @@ async def handle_text(message: Message):
 user_file_storage = {}
 
 
-async def employee_divider(hr_id: str | int) -> bool:
-    vacancy = user_file_storage[hr_id]["vacancy_file"]
-
-    zip_file_id = user_file_storage[hr_id]["resume_zip"]["id"]
-    file = await bot.get_file(zip_file_id)
-    downloaded = await bot.download_file(file.file_path)
-    with zipfile.ZipFile(BytesIO(downloaded.read())) as archive:
-        for name in archive.namelist():
-            if name.lower().endswith(".pdf"):
-                with archive.open(name) as pdf_file:
-                    with pdfplumber.open(pdf_file) as pdf:
-                        pass
-                        # TODO для каждого кандидата сделать свой uuid и соответствующей к нему текстовый файл
-                        # Надо завтра перейти в бд побыстрому
-                        # + С нейронкой все в полном порядке. Вся логика в api.
-                        # Передаешь текстовые файлы резюме и вакансии и кайфуешь
-                        # Отбор >0.70-75
-
-
 # Импортируем наш конфиг и роутеры из handlers
 
 # Настраиваем логирование для отслеживания работы бота

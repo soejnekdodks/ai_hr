@@ -13,10 +13,6 @@ class Candidate(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, index=True)
     cv: Mapped[bytes | None] = mapped_column(LargeBinary)
 
-    first_name: Mapped[str] = mapped_column()
-    last_name: Mapped[str] = mapped_column()
-    patronymic: Mapped[str | None] = mapped_column()
-
     interview_id: Mapped[int | None] = mapped_column(
         ForeignKey("interviews.id", ondelete="CASCADE"), unique=True
     )

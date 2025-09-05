@@ -1,5 +1,11 @@
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
+from transformers import (
+    AutoTokenizer,
+    AutoModelForCausalLM,
+    pipeline,
+    BitsAndBytesConfig,
+)
+
 
 class QuestionsGenerator:
     def __init__(self, model_name: str = "Vikhrmodels/Vikhr-7B-instruct_0.4"):
@@ -9,29 +15,26 @@ class QuestionsGenerator:
             load_in_4bit=True,
             bnb_4bit_compute_dtype=torch.bfloat16,  # можно заменить на torch.float16
             bnb_4bit_use_double_quant=True,
-            bnb_4bit_quant_type="nf4"
+            bnb_4bit_quant_type="nf4",
         )
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            device_map="cuda",              # сам распределит по GPU/CPU
-            quantization_config=bnb_config, # вместо torch_dtype
+            device_map="cuda",  # сам распределит по GPU/CPU
+            quantization_config=bnb_config,  # вместо torch_dtype
             attn_implementation="sdpa",
-            trust_remote_code=True
+            trust_remote_code=True,
         )
 
         self.tokenizer = AutoTokenizer.from_pretrained(
-            self.model_name,
-            trust_remote_code=True
+            self.model_name, trust_remote_code=True
         )
 
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
         self.pipe = pipeline(
-            "text-generation",
-            model=self.model,
-            tokenizer=self.tokenizer
+            "text-generation", model=self.model, tokenizer=self.tokenizer
         )
 
     def _run_model(self, prompt: str, max_new_tokens: int = 256) -> str:
@@ -39,7 +42,7 @@ class QuestionsGenerator:
             formatted_prompt = self.tokenizer.apply_chat_template(
                 [{"role": "user", "content": prompt}],
                 tokenize=False,
-                add_generation_prompt=True
+                add_generation_prompt=True,
             )
 
             outputs = self.pipe(
@@ -50,17 +53,21 @@ class QuestionsGenerator:
                 temperature=0.7,
                 top_k=50,
                 top_p=0.95,
-                eos_token_id=self.tokenizer.eos_token_id
+                eos_token_id=self.tokenizer.eos_token_id,
             )
 
-            generated_text = outputs[0]["generated_text"][len(formatted_prompt):].strip()
+            generated_text = outputs[0]["generated_text"][
+                len(formatted_prompt) :
+            ].strip()
             return generated_text
 
         except Exception as e:
             print(f"Ошибка при генерации текста: {e}")
             return ""
 
-    def generate_questions(self, resume_text: str, vacancy_text: str, num_questions: int = 10) -> list:
+    def generate_questions(
+        self, resume_text: str, vacancy_text: str, num_questions: int = 10
+    ) -> list:
         system_prompt = (
             "Ты — опытный HR-интервьюер. Твоя задача — придумать конкретные и осмысленные вопросы для интервью, "
             "исходя из требований вакансии и опыта кандидата. Формулируй вопросы кратко и по делу."
@@ -71,7 +78,7 @@ class QuestionsGenerator:
             f"Основывайся на резюме и вакансии.\n\n"
             f"ВАКАНСИЯ:\n{vacancy_text}\n\n"
             f"РЕЗЮМЕ:\n{resume_text}\n\n"
-            f"Вопросы:" 
+            f"Вопросы:"
         )
 
         full_prompt = f"{system_prompt}\n\n{user_prompt}"
