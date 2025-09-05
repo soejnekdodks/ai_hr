@@ -15,9 +15,13 @@ class Config(BaseSettings):
     MODEL_NAME: str = Field(
         description="Название модели", default="cointegrated/rubert-tiny2"
     )
-    TAGS: list[str] = Field(
+    LABELS: list[str] = Field(
         description="Список тегов для определения",
-        default=["O", "SKILL", "EXPERIENCE", "EDUCATION"],
+        default=[
+            "O", "B-PERSON", "I-PERSON", "B-LOCATION", "I-LOCATION",
+            "B-POSITION", "I-POSITION", "B-SKILL", "I-SKILL", "B-COMPANY", "I-COMPANY",
+            "B-EMAIL", "I-EMAIL", "B-PHONE", "I-PHONE"
+        ],
     )
     DATASET_PATH: str = Field(
         description="Путь до датасета", default="./dataset/cv.json"
