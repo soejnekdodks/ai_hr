@@ -1,8 +1,8 @@
 import argparse
 import logging
 from pathlib import Path
-from .trainer import NERTrainer
-from .data_loader import DataLoader
+from .train_ner import NERTrainer
+from .load_data import DataLoader
 from .config import TrainingConfig
 
 def setup_logging():

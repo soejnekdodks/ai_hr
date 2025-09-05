@@ -1,85 +1,8 @@
 from sentence_transformers import SentenceTransformer, util
 import sys
 import os
-
-# Add the project root directory to Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
-
+from src.config import config
 from cv_ai.src.ner import NERModel
-
-class EntityMatcher:
-    def __init__(self):
-        self.embedder = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
-    
-    def vectorize_entities(self, entities):
-        """Создает векторное представление сущностей"""
-        entity_texts = []
-        entity_weights = []
-        
-        for entity in entities:
-            entity_texts.append(entity['word'])
-            entity_weights.append(entity['score'])  # Уверенность модели как вес
-        
-        # Эмбеддинги для всех сущностей
-        embeddings = self.embedder.encode(entity_texts)
-        
-        return embeddings, entity_weights
-    
-    def calculate_similarity(self, embeddings1, embeddings2, weights1, weights2):
-        """Вычисляет взвешенное косинусное сходство"""
-        similarity_matrix = util.cos_sim(embeddings1, embeddings2)
-        
-        # Взвешенное среднее
-        total_similarity = 0
-        total_weight = 0
-        
-        for i in range(len(embeddings1)):
-            for j in range(len(embeddings2)):
-                similarity = similarity_matrix[i][j].item()
-                weight = weights1[i] * weights2[j]  # Произведение весов
-                total_similarity += similarity * weight
-                total_weight += weight
-        
-        return total_similarity / total_weight if total_weight > 0 else 0
-
-
-    def compare_by_category(self, resume_entities, vacancy_entities):
-        """Сравнивает сущности по категориям"""
-        category_scores = {}
-        
-        # Группируем сущности по категориям
-        resume_by_category = {}
-        vacancy_by_category = {}
-        
-        for entity in resume_entities:
-            category = entity['entity_group']
-            if category not in resume_by_category:
-                resume_by_category[category] = []
-            resume_by_category[category].append(entity)
-        
-        for entity in vacancy_entities:
-            category = entity['entity_group']
-            if category not in vacancy_by_category:
-                vacancy_by_category[category] = []
-            vacancy_by_category[category].append(entity)
-        
-        # Сравниваем каждую категорию
-        for category in set(resume_by_category.keys()) | set(vacancy_by_category.keys()):
-            resume_cat = resume_by_category.get(category, [])
-            vacancy_cat = vacancy_by_category.get(category, [])
-            
-            if resume_cat and vacancy_cat:
-                # Векторизуем сущности категории
-                resume_emb, resume_weights = self.vectorize_entities(resume_cat)
-                vacancy_emb, vacancy_weights = self.vectorize_entities(vacancy_cat)
-                
-                # Вычисляем сходство
-                similarity = self.calculate_similarity(
-                    resume_emb, vacancy_emb, resume_weights, vacancy_weights
-                )
-                category_scores[category] = similarity
-        
-        return category_scores
 
 class ResumeVacancyMatcher:
     def __init__(self, model):
@@ -102,11 +25,11 @@ class ResumeVacancyMatcher:
     def match(self, resume_text, vacancy_text):
         """Сравнивает резюме и вакансию"""
         # Извлекаем сущности
-        resume_entities = self.extract_entities(resume_text)
-        vacancy_entities = self.extract_entities(vacancy_text)
+        resume_entities = self.__extract_entities(resume_text)
+        vacancy_entities = self.__extract_entities(vacancy_text)
         
         # Сравниваем по категориям
-        category_scores = self.compare_by_category(resume_entities, vacancy_entities)
+        category_scores = self.__compare_by_category(resume_entities, vacancy_entities)
         
         # Общий score (взвешенная сумма)
         total_score = 0
@@ -124,17 +47,17 @@ class ResumeVacancyMatcher:
             "vacancy_entities": vacancy_entities
         }
     
-    def extract_entities(self, text):
+    def __extract_entities(self, text):
         """Извлекает сущности из текста"""
         return self.ner_pipeline(text)
     
-    def compare_by_category(self, resume_entities, vacancy_entities):
+    def __compare_by_category(self, resume_entities, vacancy_entities):
         """Сравнивает сущности по категориям"""
         category_scores = {}
         
         # Группируем по категориям
-        resume_by_cat = self._group_by_category(resume_entities)
-        vacancy_by_cat = self._group_by_category(vacancy_entities)
+        resume_by_cat = self.__group_by_category(resume_entities)
+        vacancy_by_cat = self.__group_by_category(vacancy_entities)
         
         # Сравниваем каждую категорию
         all_categories = set(resume_by_cat.keys()) | set(vacancy_by_cat.keys())
@@ -156,7 +79,7 @@ class ResumeVacancyMatcher:
         
         return category_scores
     
-    def _group_by_category(self, entities):
+    def __group_by_category(self, entities):
         """Группирует сущности по категориям"""
         grouped = {}
         for entity in entities:
@@ -169,7 +92,7 @@ class ResumeVacancyMatcher:
 # Инициализация
 model = NERModel()
 
-matcher = ResumeVacancyMatcher(model = model)
+matcher = ResumeVacancyMatcher(model=model)
 
 # Резюме и вакансия
 resume_text = """
@@ -204,78 +127,3 @@ def print_match_details(result):
 
 # Использование
 print_match_details(result)
-
-
-
-# import os 
-# from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
-# from transformers import AutoConfig
-# from src.config import config
-
-# class CVParserPipeline:
-#     def __init__(self, config_path):
-#         self.config = self.load_config(config_path)
-#         self.initialize_components()
-    
-#     def initialize_components(self):
-#         """Инициализация всех компонентов"""
-#         self.data_loader = DataStreamer(
-#             self.config['data_path'],
-#             self.config['batch_size']
-#         )
-#         self.preprocessor = TextPreprocessor()
-#         self.ner_model = NERModel(self.config['model_path'])
-#         self.postprocessor = ResultPostprocessor()
-#         self.cache = RedisCache() if self.config['use_cache'] else SimpleCache()
-    
-#     async def process_stream(self):
-#         """Асинхронная обработка потока данных"""
-#         async for batch in self.data_loader.async_stream():
-#             processed_batch = await self.process_batch(batch)
-#             yield processed_batch
-    
-#     async def process_batch(self, batch):
-#         """Обработка батча данных"""
-#         results = []
-        
-#         for cv_data in batch:
-#             # Предобработка
-#             normalized = self.preprocessor.normalize_cv(cv_data)
-#             text = self.extract_text_for_ner(normalized)
-            
-#             # Кеширование
-#             cache_key = self.generate_cache_key(text)
-#             if cached := self.cache.get(cache_key):
-#                 results.append(cached)
-#                 continue
-            
-#             # NER обработка
-#             entities = await self.ner_model.predict_async(text)
-#             structured = self.postprocessor.structure_entities(entities, text)
-            
-#             # Сохранение в кеш
-#             self.cache.set(cache_key, structured)
-#             results.append(structured)
-        
-#         return results
-    
-#     def run(self):
-#         """Запуск пайплайна"""
-#         for batch in self.data_loader.stream_jsonl():
-#             results = self.process_batch(batch)
-#             self.save_results(results)
-#             self.monitor.progress_update(len(results))
-
-
-# from src.ner import NERModel
-# from src.config import config
-
-# def cv_analise(text: list[str]) -> None:
-#     model = NERModel()
-#     dct_out = {tag: "" for tag in config.LABELS}
-#     for line in text:
-#         results = model.pipeline(line)
-#         for entity in results:
-#             # TODO написать обработку, чтобы был словарь: ключи-теги, значения-списки слов
-#             pass
-

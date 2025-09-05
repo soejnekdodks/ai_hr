@@ -12,8 +12,11 @@ class Config(BaseSettings):
     MODEL_PATH: str = Field(
         description="Дирректория с дообученной моделью", default="./cv_model"
     )
-    MODEL_NAME: str = Field(
-        description="Название модели", default="cointegrated/rubert-tiny2"
+    TOKEN_MODEL_NAME: str = Field(
+        description="Название модели для выделениея токенов", default="cointegrated/rubert-tiny2"
+    )
+    SEMANTIC_MODEL_NAME: str = Field(
+        description="Название модели для семантического анализа", default="paraphrase-multilingual-MiniLM-L12-v2"
     )
     LABELS: list[str] = Field(
         description="Список тегов для определения",
