@@ -44,4 +44,5 @@ async def post_quentions(
         raise HTTPException(
             status_code=406, detail="Interview saving does not acceptable"
         )
+    await query.interview.mark_as_finished(session, interview.id)
     return Response(status_code=201)

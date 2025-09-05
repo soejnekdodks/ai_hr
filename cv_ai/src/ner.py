@@ -94,6 +94,7 @@ class NERModel:
             aggregation_strategy="simple",
         )
 
+
 class ResumeParser:
     def __init__(self):
         # Загружаем базовую модель + LoRA
