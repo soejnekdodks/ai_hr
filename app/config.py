@@ -31,7 +31,10 @@ class Config(BaseSettings):
         description="URL базы данных",
         default="postgresql+asyncpg://pg_log:pg_pass@localhost:5432/pg_name",
     )
-
+    NUMS_OF_QUESTIONS: int = Field(
+        description="Количество вопросов для генерации",
+        default=8,
+    )
     class Config:
         env_file = ".env"
         case_sensitive = False

@@ -25,6 +25,9 @@ scikit-learn = "1.5.0"
 
 # NER Specific
 seqeval = "1.2.2"
+peft = "0.17.1"
+spacy = "3.8.7"
+nltk = "3.9.1"
 
 # Utilities
 loguru = "0.7.3"

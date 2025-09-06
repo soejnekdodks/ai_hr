@@ -46,7 +46,7 @@ async def get_questions(
 
 
 @router.post("/api/v1/answers")
-async def post_quentions(
+async def post_answers(
     data: AnswersRequest, session: AsyncSession = Depends(get_async_session)
 ) -> None:
     interview = await query.interview.get_interview(session, data.interview_id)
