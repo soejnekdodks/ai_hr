@@ -35,6 +35,10 @@ class Config(BaseSettings):
         description="Количество вопросов для генерации",
         default=8,
     )
+    DOMAIN: str = Field(
+        description="",
+        default="http://91.209.135.81"
+    )
     class Config:
         env_file = ".env"
         case_sensitive = False

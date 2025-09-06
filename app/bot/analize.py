@@ -7,9 +7,7 @@ from aiogram import Router
 from aiogram.types import Message, InputFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
-import magic
 
-from app.bot.start_bot import bot
 from app.config import config
 from app.database.core import get_async_session
 from app.database.query.candidate import create as create_candidate
@@ -25,6 +23,13 @@ MAX_RESUMES_IN_ZIP = 10
 MAX_RESUME_SIZE = 10 * 1024 * 1024  # 10MB
 
 router = Router()
+
+from aiogram import Bot
+bot = Bot(config.TG_TOKEN)
+
+def create_mock():
+    """Заглушка для создания mock URL"""
+    return "https://example.com/interview/mock-id"
 
 async def analyze_resume(
     message: Message,
@@ -60,12 +65,9 @@ async def analyze_resume(
             expiration_time=timedelta(days=7),
         )
 
-        # Получаем chat_id HR-у
-        hr_chat_id = candidate.chat_id
-        if not hr_chat_id:
-            await message.answer("❌ Не удалось найти chat_id HR для кандидата.")
-            return
-
+        # Получаем chat_id HR-а
+        hr_chat_id = message.chat.id
+        
         # --- Формируем сообщение HR ---
         file_info = get_file_info(resume_bytes, file_format)
         caption = (
@@ -73,7 +75,9 @@ async def analyze_resume(
             f"🆔 ID кандидата: {candidate.id}\n"
             f"⚡️ Совпадение с вакансией: {match_percentage:.1f}%\n"
             f"📋 Интервью ID: {interview_id}\n"
-            f"🔗 Ссылка на интервью: {url}"
+            f"🔗 Ссылка на интервью: {url}\n"
+            f"📄 Формат: {file_info['format']}\n"
+            f"📏 Размер: {format_file_size(file_info['size_bytes'])}"
         )
 
         cv_file = BytesIO(candidate.cv)
@@ -85,6 +89,12 @@ async def analyze_resume(
             document=InputFile(cv_file, filename=filename),
             caption=caption,
         )
+        
+        # Подтверждение пользователю
+        await message.answer(
+            f"✅ Резюме принято! Совпадение: {match_percentage:.1f}%. "
+            f"HR получил уведомление."
+        )
     else:
         await message.answer(
             f"❌ Резюме {file_format.upper()} не прошло отбор "
@@ -93,20 +103,16 @@ async def analyze_resume(
 
 
 def get_file_info(file_bytes: bytes, original_format: str) -> dict:
+    """Определяет информацию о файле по сигнатурам"""
     size_bytes = len(file_bytes)
-    try:
-        mime = magic.Magic(mime=True)
-        mime_type = mime.from_buffer(file_bytes[:2048])
-    except Exception:
+    
+    # Определяем MIME-type по сигнатурам файлов
+    mime_type, extension = detect_file_type(file_bytes)
+    
+    # Если не удалось определить, используем оригинальный формат
+    if mime_type == "application/octet-stream":
         mime_type = f"application/{original_format}"
-
-    mime_to_extension = {
-        "application/pdf": ".pdf",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
-        "application/msword": ".doc",
-        "text/plain": ".txt",
-    }
-    extension = mime_to_extension.get(mime_type, f".{original_format}")
+        extension = f".{original_format}"
 
     return {
         "size_bytes": size_bytes,
@@ -114,3 +120,79 @@ def get_file_info(file_bytes: bytes, original_format: str) -> dict:
         "format": original_format.upper(),
         "extension": extension,
     }
+
+
+def detect_file_type(file_bytes: bytes) -> tuple[str, str]:
+    """Определяет тип файла по сигнатурам"""
+    if len(file_bytes) < 4:
+        return "application/octet-stream", ".bin"
+    
+    # PDF: %PDF-
+    if file_bytes.startswith(b'%PDF-'):
+        return "application/pdf", ".pdf"
+    
+    # ZIP-based formats (DOCX, XLSX, PPTX, etc.)
+    if file_bytes.startswith(b'PK'):
+        return "application/zip", ".zip"
+    
+    # Microsoft DOC (OLE Compound Document)
+    if file_bytes.startswith(b'\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1'):
+        return "application/msword", ".doc"
+    
+    # RTF: {\rtf
+    if file_bytes.startswith(b'{\\rtf'):
+        return "application/rtf", ".rtf"
+    
+    # Plain text (UTF-8 BOM)
+    if file_bytes.startswith(b'\xEF\xBB\xBF'):
+        return "text/plain", ".txt"
+    
+    # Plain text (UTF-16)
+    if file_bytes.startswith(b'\xFF\xFE') or file_bytes.startswith(b'\xFE\xFF'):
+        return "text/plain", ".txt"
+    
+    # HTML
+    if file_bytes.startswith(b'<!DOCTYPE') or file_bytes.startswith(b'<html'):
+        return "text/html", ".html"
+    
+    # RAR
+    if file_bytes.startswith(b'Rar!'):
+        return "application/vnd.rar", ".rar"
+    
+    # 7ZIP
+    if file_bytes.startswith(b'7z'):
+        return "application/x-7z-compressed", ".7z"
+    
+    # По умолчанию
+    return "application/octet-stream", ".bin"
+
+
+def format_file_size(size_bytes: int) -> str:
+    """Конвертирует размер в байтах в читаемый формат"""
+    if size_bytes == 0:
+        return "0B"
+    
+    size_names = ["B", "KB", "MB", "GB"]
+    i = 0
+    size = size_bytes
+    while size >= 1024 and i < len(size_names) - 1:
+        size /= 1024.0
+        i += 1
+    
+    return f"{size:.1f} {size_names[i]}"
+
+
+# Дополнительная функция для определения расширения по оригинальному формату
+def get_extension_by_format(file_format: str) -> str:
+    """Возвращает расширение файла на основе формата"""
+    extensions = {
+        'pdf': '.pdf',
+        'docx': '.docx',
+        'doc': '.doc',
+        'txt': '.txt',
+        'rtf': '.rtf',
+        'html': '.html',
+        'zip': '.zip',
+        'rar': '.rar',
+    }
+    return extensions.get(file_format.lower(), f'.{file_format}')

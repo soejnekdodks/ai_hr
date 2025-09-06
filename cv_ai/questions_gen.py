@@ -1,5 +1,5 @@
 import torch
-from config import config
+from cv_ai.config import config
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
@@ -11,8 +11,6 @@ from transformers import (
 class QuestionsGenerator:
     def __init__(self):
         self.model_name = config.BASE_MODEL
-
-        # Если резко захотели ебнутый прирост производительности
 
         # bnb_config = BitsAndBytesConfig(
         #     load_in_4bit=True,

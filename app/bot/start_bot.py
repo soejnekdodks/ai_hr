@@ -5,8 +5,7 @@ from loguru import logger
 
 from app.bot.handlers import router
 from app.config import config
-
-bot = Bot(config.TG_TOKEN)
+from app.bot.analize import bot
 dp = Dispatcher()
 dp.include_router(router)
 

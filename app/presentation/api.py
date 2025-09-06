@@ -1,7 +1,7 @@
 import os
 import uuid
 
-from answers_analize import AnswersAnalyzer
+from cv_ai.answers_analize import AnswersAnalyzer
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
