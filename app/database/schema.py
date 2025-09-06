@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from sqlalchemy import ForeignKey, Integer, Interval, LargeBinary, func
+from sqlalchemy import TEXT, ForeignKey, Interval, LargeBinary, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.core import Base
@@ -28,7 +28,22 @@ class Interview(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     expiration_time: Mapped[timedelta | None] = mapped_column(Interval)
     state: Mapped[InterviewState] = mapped_column(default=InterviewState.OPEN)
+    alias_id: Mapped[str | None] = mapped_column(String(12), unique=True)
     candidate: Mapped[Candidate] = relationship(
         back_populates="interview",
         uselist=False,
     )
+    questions: Mapped[list["Question"]] = relationship(back_populates="interview")
+
+
+class Question(Base):
+    __tablename__ = "questions"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, index=True)
+    question: Mapped[str] = mapped_column()
+    answer: Mapped[str | None] = mapped_column(TEXT)
+
+    interview_id: Mapped[int | None] = mapped_column(
+        ForeignKey("interviews.id"), unique=True
+    )
+    interview: Mapped[Interview] = relationship(back_populates="questions")

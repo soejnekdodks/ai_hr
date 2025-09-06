@@ -29,7 +29,20 @@ async def get_questions(
         raise HTTPException(status_code=404, detail="Interview not found")
     elif interview.state != InterviewState.OPEN:
         raise HTTPException(status_code=406, detail="Interview does not acceptable")
-    return QuestionsResponse(questions=[Question(id=423, question="Хто ты?")])
+    return QuestionsResponse.model_validate(
+        {
+            "questions": [
+                {"id": 0, "question": "Что такое замыкание (closure) в JavaScript?"},
+                {"id": 1, "question": "Как избежать Callback Hell?"},
+                {"id": 2, "question": "Объясните принципы REST."},
+                {
+                    "id": 3,
+                    "question": "Что такое миграции базы данных и зачем они нужны?",
+                },
+                {"id": 4, "question": "Как вы обеспечиваете безопасность своего API?"},
+            ]
+        }
+    )
 
 
 @router.post("/api/v1/answers")

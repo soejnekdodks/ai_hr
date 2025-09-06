@@ -10,7 +10,10 @@ from app.exceptions import CandidateNotFound
 
 
 async def create(
-    session: AsyncSession, candidate_id: int, expiration_time: timedelta | None = None
+    session: AsyncSession,
+    candidate_id: int,
+    questions: list[str],
+    expiration_time: timedelta | None = None,
 ) -> int:
     candidate = await get_candidate(session, candidate_id)
     if candidate is None:

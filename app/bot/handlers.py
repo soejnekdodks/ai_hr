@@ -1,8 +1,9 @@
+import zipfile
+from io import BytesIO
+
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message
-import zipfile
-from io import BytesIO
 
 router = Router()
 
