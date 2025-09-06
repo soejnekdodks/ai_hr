@@ -1,4 +1,5 @@
 import os
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import RedirectResponse
@@ -13,35 +14,40 @@ router = APIRouter()
 
 
 @router.post("/api/v1/create-mock")
-async def create_mock(session: AsyncSession = Depends(get_async_session)) -> int:
+async def create_mock(session: AsyncSession = Depends(get_async_session)) -> str:
     candidate = await query.candidate.create(session, b"\x00" + os.urandom(4) + b"\x00")
-    interview_id = await query.interview.create(session, candidate.id)
+    alias_id = uuid.uuid4()
+    await query.interview.create(
+        session,
+        candidate.id,
+        [
+            "Что такое замыкание (closure) в JavaScript?",
+            "Как избежать Callback Hell?",
+            "Объясните принципы REST.",
+            "Что такое миграции базы данных и зачем они нужны?",
+            "Как вы обеспечиваете безопасность своего API?",
+        ],
+        alias_id,
+    )
     await session.commit()
-    return interview_id
+    return f"https://b96e76f4782e.ngrok-free.app/api/v1/deeplink?id={alias_id}"
 
 
 @router.get("/api/v1/questions", response_model=QuestionsResponse)
 async def get_questions(
-    interview_id: int, session: AsyncSession = Depends(get_async_session)
+    interview_id: uuid.UUID, session: AsyncSession = Depends(get_async_session)
 ) -> QuestionsResponse:
-    interview = await query.interview.get_interview(session, interview_id)
+    interview = await query.interview.get_interview_by_alias(session, interview_id)
     if interview is None:
         raise HTTPException(status_code=404, detail="Interview not found")
     elif interview.state != InterviewState.OPEN:
         raise HTTPException(status_code=406, detail="Interview does not acceptable")
-    return QuestionsResponse.model_validate(
-        {
-            "questions": [
-                {"id": 0, "question": "Что такое замыкание (closure) в JavaScript?"},
-                {"id": 1, "question": "Как избежать Callback Hell?"},
-                {"id": 2, "question": "Объясните принципы REST."},
-                {
-                    "id": 3,
-                    "question": "Что такое миграции базы данных и зачем они нужны?",
-                },
-                {"id": 4, "question": "Как вы обеспечиваете безопасность своего API?"},
-            ]
-        }
+    questions = await query.questions.get_questions(session, interview.id)
+    return QuestionsResponse(
+        questions=[
+            Question(id=question.id, question=question.question)
+            for question in questions
+        ]
     )
 
 
@@ -49,7 +55,7 @@ async def get_questions(
 async def post_quentions(
     data: AnswersRequest, session: AsyncSession = Depends(get_async_session)
 ) -> None:
-    interview = await query.interview.get_interview(session, data.interview_id)
+    interview = await query.interview.get_interview_by_alias(session, data.interview_id)
     if interview is None:
         raise HTTPException(status_code=404, detail="Interview not found")
     elif interview.state != InterviewState.OPEN:
@@ -61,5 +67,5 @@ async def post_quentions(
 
 
 @router.get("/api/v1/deeplink")
-async def deeplink() -> None:
-    return RedirectResponse(url="vtbhackaton://interview/123")
+async def deeplink(id: str) -> None:
+    return RedirectResponse(url=f"vtbhackaton://interview/{id}")
