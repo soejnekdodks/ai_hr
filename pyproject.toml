@@ -46,6 +46,7 @@ pdfplumber = "^0.11.7"
 fitz = "^0.0.1.dev2"
 httpx = "^0.28.1"
 pymupdf = "^1.26.4"
+bitsandbytes = "^0.47.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.12.9"
