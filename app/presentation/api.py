@@ -30,7 +30,7 @@ async def create_mock(session: AsyncSession = Depends(get_async_session)) -> str
         alias_id,
     )
     await session.commit()
-    return f"https://b96e76f4782e.ngrok-free.app/api/v1/deeplink?id={alias_id}"
+    return f"http://91.209.135.81/api/v1/deeplink?id={alias_id}"
 
 
 @router.get("/api/v1/questions", response_model=QuestionsResponse)
@@ -62,10 +62,10 @@ async def post_quentions(
         raise HTTPException(
             status_code=406, detail="Interview saving does not acceptable"
         )
-    await query.interview.mark_as_finished(session, interview.id)
     await query.questions.set_answers(
         session, [answer.model_dump() for answer in data.answers]
     )
+    await query.interview.mark_as_finished(session, interview.id)
     return Response(status_code=201)
 
 
