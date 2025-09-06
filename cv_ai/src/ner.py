@@ -1,7 +1,7 @@
 import os 
 from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
 from transformers import AutoConfig
-from src.config import config
+from config import config
 
 
 class NERModel:
@@ -46,7 +46,21 @@ class NERModel:
     def __load_model(self, model_path):
         """Загрузка сохраненной модели"""
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.model = AutoModelForTokenClassification.from_pretrained(model_path)
+
+        model_config = AutoConfig.from_pretrained(
+            model_path,
+            num_labels=len(config.LABELS),
+            id2label=self.id_to_label,
+            label2id=self.label_to_id
+        )
+
+        # 🔑 добавлен ignore_mismatched_sizes=True
+        self.model = AutoModelForTokenClassification.from_pretrained(
+            model_path,
+            config=model_config,
+            ignore_mismatched_sizes=True
+        )
+
         self.pipeline = pipeline(
             "token-classification",
             model=self.model,

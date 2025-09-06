@@ -1,104 +1,172 @@
-from transformers import pipeline
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import PeftModel
+import torch
+import json
 import re
+from typing import Dict, List
+from config import config
 
-class ContextualNER:
-    def __init__(self):
-        # Загружаем модель DeepPavlov
-        self.pipeline = pipeline(
-            "ner",
-            model="FacebookAI/xlm-roberta-large-finetuned-conll03-german",
-            tokenizer="FacebookAI/xlm-roberta-large-finetuned-conll03-german",
-            aggregation_strategy="simple"
+def _build_json_instruction(mode: str) -> str:
+    if mode == "resume":
+        task = (
+            "Извлеките из текста резюме кандидата атомарные данные. "
+            "Заполните ФИО (PERSON), контакты (CONTACT, BIRTHDATE, LOCATION), "
+            "образование (UNIVERSITY, DEGREE, GRAD_YEAR, EDUCATION), "
+            "опыт работы (COMPANY, POSITION, YEARS, EXPERIENCE, ACHIEVEMENT), "
+            "навыки (SKILL, TOOL, LANGUAGE, SOFT_SKILL)."
         )
-        self.ner_to_internal = {
-            "PER": "PERSON",
-            "LOC": "LOCATION",
-            "ORG": "EDUCATION",  # при совпадении с вузом — Education
-            "EXPERIENCE": "EXPERIENCE",     # по умолчанию, уточним позже
-        }
+    else:
+        task = (
+            "Извлеките из текста вакансии атомарные требования и условия. "
+            "Заполните требования (REQUIREMENT), обязанности (RESPONSIBILITY), "
+            "условия (CONDITION), технические навыки (SKILL, TOOL, LANGUAGE), "
+            "soft skills (SOFT_SKILL), локацию (LOCATION)."
+        )
 
-        self.education_keywords = {
-            # Университеты России
-            "мгу", "московский государственный университет", "спбгу", "санкт-петербургский государственный университет",
-            "мфти", "московский физико-технический институт", "вшэ", "высшая школа экономики",
-            "мгту", "мгту баумана", "бауманка", "ранхигс", "финансовый университет", "рггу", "ргту",
-            "мгу имени ломоносова", "рудн", "университет дружбы народов", "мифи", "миссис", "гуу",
-            "урфу", "тгу", "тюмгу", "нгу", "сгу", "пгу", "дгу", "кфу", "спбпу", "политех", "пгниу",
+    labels_hint = ", ".join(config.LABELS)
+    example = {
+        "SKILL": [],
+        "EDUCATION": [],
+        "EXPERIENCE": [],
+        "PERSON": [],
+        "LOCATION": [],
+        "SOFT_SKILL": []
+    }
+    
+    return (
+        f"{task}. Верните СТРОГО валидный JSON со структурами:\n"
+        f"{json.dumps(example, ensure_ascii=False)}\n"
+        f"Требования:\n"
+        f"— Только JSON, без комментариев и объяснений.\n"
+        f"— Каждый элемент списка должен быть коротким и атомарным.\n"
+        f"— Не придумывайте данные. Если раздел пуст, верните пустой список.\n"
+        f"— Допустимые ключи: {labels_hint}.\n"
+    )
 
-            # Общие ключи
-            "университет", "институт", "академия", "колледж", "техникум", "вузы", "бакалавр",
-            "магистр", "аспирант", "phd", "doctoral", "кандидат наук"
-        }
+class ResumeParser:
+    def __init__(self):
+        # Загружаем базовую модель + LoRA
+        base = AutoModelForCausalLM.from_pretrained(
+            config.BASE_MODEL,
+            torch_dtype=torch.float16,
+            device_map="auto"
+        )
+        tokenizer = AutoTokenizer.from_pretrained(config.BASE_MODEL)
+        self.model = PeftModel.from_pretrained(base, config.LORA_MODEL)
+        self.tokenizer = tokenizer
+        self.model.eval()
 
-        self.skill_keywords = {
-            # Языки программирования
-            "python", "java", "c", "c++", "c#", "go", "golang", "javascript", "typescript", "php",
-            "ruby", "rust", "swift", "kotlin", "scala", "perl", "objective-c", "r", "matlab",
+        # В некоторых сборках Qwen3 нет eos_token_id — защитимся
+        self.eos_token_id = getattr(self.tokenizer, "eos_token_id", None)
 
-            # Фреймворки и библиотеки
-            "django", "flask", "fastapi", "tornado", "aiohttp", "spring", "hibernate",
-            "express", "nestjs", "react", "vue", "angular", "svelte", "nextjs", "nuxt",
-            "qt", "gtk", "tkinter", "pandas", "numpy", "scipy", "scikit-learn", "tensorflow",
-            "pytorch", "keras", "opencv",
+    def __build_prompt(self, text: str, mode: str = "resume") -> str:
+        # Используем рекомендованный на странице модели ChatML-формат
+        # и явно запрещаем размышления / chain-of-thought.
+        instruction = _build_json_instruction(mode)
+        return (
+            f"<|im_start|>system{config.SYSTEM_PROMPT}<|im_end|>"
+            f"<|im_start|>user{instruction}Текст:{text}<|im_end|>"
+            f"<|im_start|>assistant"
+        )
 
-            # Базы данных
-            "postgres", "postgresql", "mysql", "mariadb", "sqlite", "oracle", "mssql",
-            "mongodb", "cassandra", "redis", "dynamodb", "elasticsearch", "neo4j",
+    @staticmethod
+    def _json_only(s: str) -> Dict[str, List[str]]:
+        def _default():
+            return {k: [] for k in config.LABELS}
 
-            # DevOps / Cloud
-            "docker", "kubernetes", "helm", "ansible", "terraform", "jenkins",
-            "gitlab-ci", "github actions", "travis", "circleci",
-            "aws", "gcp", "azure", "digitalocean", "openstack",
+        try:
+            obj = json.loads(s)
+        except Exception:
+            # fallback — ищем первый большой блок {...}
+            matches = re.findall(r"\{.*\}", s, flags=re.DOTALL)
+            if not matches:
+                return _default()
+            for frag in matches:
+                try:
+                    obj = json.loads(frag)
+                    break
+                except Exception:
+                    continue
+            else:
+                return _default()
 
-            # Сообщения / шина данных
-            "kafka", "rabbitmq", "activemq", "zeromq", "mqtt", "grpc", "rest", "soap",
-            "graphql", "websockets",
+        result = {}
+        for k in config.LABELS:
+            val = obj.get(k, [])
+            if isinstance(val, str):
+                result[k] = [val]
+            elif isinstance(val, list):
+                result[k] = [str(x) for x in val if isinstance(x, (str, int, float))]
+            else:
+                result[k] = []
+        return result
+        
+    @staticmethod
+    def _normalize(items: List[str]) -> List[str]:
+        out = []
+        for x in items:
+            x = str(x).strip().lower()
+            x = re.sub(r"[^a-zа-яё0-9@+/#.\- ,;:()]+", "", x, flags=re.IGNORECASE)
+            x = re.sub(r"\s+", " ", x)
+            if len(x) > 1:
+                out.append(x)
+        seen, uniq = set(), []
+        for x in out:
+            if x not in seen:
+                uniq.append(x)
+                seen.add(x)
+        return uniq
+        
+    def _run_model(self, prompt: str) -> str:
+        """Запускает модель и возвращает сырой текст (без постобработки)."""
+        inputs = self.tokenizer(
+            prompt,
+            return_tensors="pt",
+            truncation=True,
+            max_length=2048
+        ).to(self.model.device)
 
-            # Инструменты
-            "git", "svn", "mercurial", "linux", "bash", "powershell", "zsh",
-            "make", "cmake", "gradle", "maven", "npm", "yarn", "pnpm",
+        with torch.no_grad():
+            out = self.model.generate(
+                **inputs,
+                max_new_tokens=384,
+                do_sample=False,  # детерминированный вывод
+                temperature=0.0,
+                eos_token_id=self.eos_token_id,
+            )
 
-            # Data science / ML / AI
-            "machine learning", "deep learning", "data analysis", "etl", "airflow",
-            "hadoop", "spark", "hive", "beam", "mlflow", "huggingface",
+        raw = self.tokenizer.decode(
+            out[0][inputs.input_ids.shape[-1]:],
+            skip_special_tokens=True
+        )
+        return raw
 
-            # Другие полезные
-            "rest api", "ci/cd", "microservices", "monolith", "distributed systems",
-            "highload", "cloud native", "observability", "logging", "monitoring",
-            "prometheus", "grafana", "elastic stack"
-        }
+    def extract_entities(self, text: str, mode: str = "resume") -> dict:
+        """
+        Возвращает dict с ключами из config.LABELS.
+        Двухшаговый подход:
+        1. Прогрев — модель думает, но выводит только 'OK'.
+        2. Основной шаг — модель выдаёт чистый JSON.
+        """
 
-    def __normalize(self, text: str) -> str:
-        return re.sub(r"\s+", " ", text.lower()).strip()
+        # 1. Прогрев
+        warmup_prompt = (
+            f"<|im_start|>system{config.SYSTEM_PROMPT}<|im_end|>"
+            f"<|im_start|>Сначала проанализируй текст и подумай, какие данные нужно извлечь. "
+            f"Выведи только 'OK'. Текст: {text}<|im_end|>"
+            f"<|im_start|>assistant"
+        )
+        _ = self._run_model(warmup_prompt)
 
-    def __map_entity_group(self, ent: dict) -> str:
-        text = self.__normalize(ent["word"])
-        entity_group = self.ner_to_internal.get(ent["entity_group"], "O")
+        # 2. Основной вызов
+        prompt = self.__build_prompt(text, mode)
+        raw = self._run_model(prompt)
 
-        if entity_group == "EDUCATION" or any(kw in text for kw in self.education_keywords):
-            return "EDUCATION"
-        elif entity_group == "EXPERIENCE" or any(kw in text for kw in self.skill_keywords):
-            return "EXPERIENCE"
-        elif entity_group == "PERSON":
-            return "PERSON"
-        elif entity_group == "LOCATION":
-            return "LOCATION"
-        else:
-            return "O"
+        raw = raw.lstrip(" :\n\t")
+        raw = raw.replace("```json", "").replace("```", "")
+        raw = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL).strip()
 
-    def extract_entities(self, text: str) -> list[dict]:
-        entities = self.pipeline(text)
+        print(raw)
 
-        results = []
-        for ent in entities:
-            label = self.__map_entity_group(ent)
-            if label == "O":
-                continue
-            results.append({
-                "entity_group": label,
-                "score": float(ent["score"]),
-                "word": ent["word"],
-                "start": ent["start"],
-                "end": ent["end"]
-            })
-        return results
+        data = self._json_only(raw)
+        return {k: self._normalize(v) for k, v in data.items()}
