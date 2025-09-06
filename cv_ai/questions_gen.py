@@ -22,7 +22,7 @@ class QuestionsGenerator:
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            device_map="auto",  # сам распределит по GPU/CPU
+            device_map="cpu",  # сам распределит по GPU/CPU
             torch_dtype=torch.bfloat16,
             attn_implementation="sdpa",
             trust_remote_code=True,
