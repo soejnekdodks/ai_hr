@@ -10,7 +10,7 @@ from transformers import (
 
 class QuestionsGenerator:
     def __init__(self):
-        self.model_name = config.BASE_MODEL
+        self.model_name = "Vikhrmodels/Vikhr-Llama-3.2-1B-Instruct"
 
         # bnb_config = BitsAndBytesConfig(
         #     load_in_4bit=True,
