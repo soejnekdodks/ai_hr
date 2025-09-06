@@ -30,7 +30,7 @@ AI HR
 
 - [Docker](https://docs.docker.com/get-docker/) и Docker Compose
 - [Poetry](https://python-poetry.org/) (для разработки)
-- [Front](https://github.com/tikhonlym/VTB-hackaton)
+- [Front](https://github.com/tikhonlym/VTB-hackaton) (наш фронт)
 
 ### Настройка окружения
 
