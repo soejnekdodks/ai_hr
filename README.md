@@ -18,7 +18,8 @@
 
 <hr>
 <div align="center">
-# ANDROID ПРИЛОЖЕНИЕ
+
+## ANDROID ПРИЛОЖЕНИЕ
 
 ### Ссылка на репозиторий -  https://github.com/tikhonlym/VTB-hackaton
 
