@@ -11,19 +11,19 @@ class AnswersAnalyzer:
     def __init__(self):
         self.model_name = "Vikhrmodels/Vikhr-Llama-3.2-1B-Instruct"
 
-        # bnb_config = BitsAndBytesConfig(
-        #     load_in_4bit=True,
-        #     bnb_4bit_compute_dtype=torch.bfloat16,  # можно заменить на torch.float16
-        #     bnb_4bit_use_double_quant=True,
-        #     bnb_4bit_quant_type="nf4"
-        # )
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=torch.bfloat16,  # можно заменить на torch.float16
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type="nf4"
+        )
 
         # quantization_config=bnb_config, # вместо torch_dtype
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
             device_map="cpu",  # сам распределит по GPU/CPU
-            torch_dtype=torch.bfloat16,
+            quantization_config=bnb_config,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
         )
