@@ -24,7 +24,7 @@ COPY ./alembic /app/alembic
 COPY ./cv_ai /app/cv_ai
 COPY main.py .
 
-RUN poetry run python cv_ai/test.py
+RUN poetry run python /app/cv_ai/test.py
 CMD ["poetry", "run", "python", "/app/main.py"]
 
 
@@ -37,5 +37,5 @@ COPY ./alembic.ini .
 COPY ./alembic /app/alembic
 COPY ./cv_ai /app/cv_ai
 
-RUN poetry run python cv_ai/test.py
+RUN poetry run python /app/cv_ai/test.py
 CMD ["poetry", "run", "python", "/app/main.py"]
