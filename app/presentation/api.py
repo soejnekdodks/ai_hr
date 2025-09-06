@@ -1,9 +1,11 @@
 import os
 import uuid
 
+from answers_analize import AnswersAnalyzer
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.bot.start_bot import bot
 
 from app.database import query
 from app.database.core import get_async_session
@@ -55,17 +57,41 @@ async def get_questions(
 async def post_answers(
     data: AnswersRequest, session: AsyncSession = Depends(get_async_session)
 ) -> None:
+
     interview = await query.interview.get_interview_by_alias(session, data.interview_id)
+
     if interview is None:
         raise HTTPException(status_code=404, detail="Interview not found")
-    elif interview.state != InterviewState.OPEN:
+    
+    if interview.state != InterviewState.OPEN:
         raise HTTPException(
             status_code=406, detail="Interview saving does not acceptable"
         )
+
+    # Получаем chat_id HR-у, который связан с интервью
+    candidate = interview.candidate
+    hr_chat_id = candidate.chat_id
+    if not hr_chat_id:
+        raise HTTPException(status_code=404, detail="HR chat_id not found")
+
+    # Анализируем ответы кандидата
+    questions = [q.question for q in interview.questions]
+    answers = [answer.answer for answer in data.answers]
+    
+    analyzer = AnswersAnalyzer()
+    report = analyzer.analyze_answers(questions, answers)
+
+    # Отправляем отчет HR-у
+    await bot.send_message(hr_chat_id, report)
+
+    # Сохраняем ответы кандидата в базе данных
     await query.questions.set_answers(
         session, [answer.model_dump() for answer in data.answers]
     )
+    
+    # Закрываем интервью
     await query.interview.mark_as_finished(session, interview.id)
+
     return Response(status_code=201)
 
 
