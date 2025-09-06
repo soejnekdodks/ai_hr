@@ -26,7 +26,7 @@ class ResumeVacancyAnalyze:
             self.model_name,
             device_map="cpu",  # сам распределит по GPU/CPU
             torch_dtype=torch.bfloat16,
-            attn_implementation="sdpa",
+            low_cpu_mem_usage=True,
             trust_remote_code=True,
         )
 
