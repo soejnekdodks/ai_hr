@@ -1,6 +1,5 @@
 # AI HR | Сервис автоматического проведения собеседований
 
-<h1 align="center">AI HR</h1>
 
 <div align="center">
   <a href="https://www.python.org/">
@@ -18,7 +17,7 @@
 </div>
 
 <hr>
-
+<div align="center">
 # ANDROID ПРИЛОЖЕНИЕ
 
 ### Ссылка на репозиторий -  https://github.com/tikhonlym/VTB-hackaton
@@ -30,3 +29,4 @@
 <img width="252" height="540" alt="Screenshot_20250909-194950" src="https://github.com/user-attachments/assets/b91bd687-c5ea-4c7d-8044-8e38f0209d74" />
 
 <img width="252" height="540" alt="Screenshot_20250909-194953" src="https://github.com/user-attachments/assets/6660d6a0-b76b-4cf8-84e4-8124b3e4b6a4" />
+</div>
