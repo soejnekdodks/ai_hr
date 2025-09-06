@@ -1,31 +1,26 @@
-# app/utils/pdf_parser.py
-import pdfplumber
-import io
-from fastapi import HTTPException
+import fitz  # PyMuPDF
 
-async def extract_text_from_pdf(pdf_file: UploadFile) -> str:
+def extract_text_from_pdf_pymupdf(pdf_path):
     """
-    Извлекает текст из PDF файла.
+    Извлекает текст из PDF с помощью PyMuPDF
+    Быстрый и эффективный метод
+    
+    Args:
+        pdf_path (str): Путь к PDF файлу
+    
+    Returns:
+        str: Извлеченный текст
     """
     try:
-        # Читаем содержимое файла
-        contents = await pdf_file.read()
-        
-        # Используем pdfplumber для извлечения текста
         text = ""
-        with pdfplumber.open(io.BytesIO(contents)) as pdf:
-            for page in pdf.pages:
-                page_text = page.extract_text()
-                if page_text:
-                    text += page_text + "\n"
+        with fitz.open(pdf_path) as doc:
+            for page in doc:
+                text += page.get_text() + "\n"
         
-        if not text.strip():
-            raise HTTPException(status_code=400, detail="Не удалось извлечь текст из PDF файла")
+        return text
         
-        return text.strip()
-    
     except Exception as e:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Ошибка при обработке PDF файла: {str(e)}"
-        )
+        print(f"Ошибка при чтении файла: {e}")
+        return None
+
+# Установка: pip install PyMuPDF
