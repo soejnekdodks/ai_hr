@@ -8,26 +8,22 @@ authors = [
     "Anthony Simonov <asimonov05@gmail.com>"
 ]
 readme = "README.md"
-packages = [{include = "src"}]
+packages = [{ include = "src" }]
 
 [tool.poetry.dependencies]
-python = ">=3.13,<3.14"
+# Рекомендую использовать стабильный Python
+python = ">=3.10,<3.14"
+
 # Web Framework
 fastapi = "0.116.1"
-uvicorn = {extras = ["standard"], version = "0.35.0"}
+uvicorn = { extras = ["standard"], version = "0.35.0" }
 
 # ML & NLP
 transformers = "4.56.0"
 datasets = "4.0.0"
-
-# Data Processing
-scikit-learn = "1.5.0"
-
-# NER Specific
-seqeval = "1.2.2"
-peft = "0.17.1"
-spacy = "3.8.7"
-nltk = "3.9.1"
+torch = "^2.8.0"
+accelerate = "^1.10.1"
+sentence-transformers = "^5.1.0"
 
 # Utilities
 loguru = "0.7.3"
@@ -35,23 +31,25 @@ pydantic = "2.10.0"
 pydantic-settings = "2.10.1"
 python-dotenv = "1.1.1"
 tqdm = "4.67.0"
+httpx = "^0.28.1"
 
-# File Processing
-python-multipart = "0.0.7"
-torch = "^2.8.0"
-sentence-transformers = "^5.1.0"
-accelerate = "^1.10.1"
+# DB & Async
 sqlalchemy = "^2.0.43"
 alembic = "^1.16.5"
 asyncpg = "^0.30.0"
 aiogram = "^3.22.0"
-pdfplumber = "^0.11.7"
-fitz = "^0.0.1.dev2"
-httpx = "^0.28.1"
+
+# File Processing
+python-multipart = "0.0.7"
 pymupdf = "^1.26.4"
-python-docx = "^1.2.0"
-docx2txt = "^0.9"
 striprtf = "^0.0.29"
+python-docx = "^1.2.0"
+
+# Optional GPU Support
+bitsandbytes = { version = "^0.43.0", optional = true }
+
+[tool.poetry.extras]
+gpu = ["bitsandbytes"]
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.12.9"
@@ -61,4 +59,3 @@ isort = "^6.0.1"
 [build-system]
 requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
-

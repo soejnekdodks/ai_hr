@@ -4,7 +4,7 @@ services:
     container_name: app
     build:
       context: ./
-      target: development
+      target: production
     restart: always
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}

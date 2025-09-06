@@ -1,11 +1,14 @@
 import torch
-from cv_ai.config import config
+from loguru import logger
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     BitsAndBytesConfig,
     pipeline,
 )
+
+from cv_ai.config import config
+from cv_ai.shrink import Shrinker
 
 
 class QuestionsGenerator:
@@ -23,9 +26,9 @@ class QuestionsGenerator:
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            device_map="auto",  # сам распределит по GPU/CPU
+            device_map="cpu",
             torch_dtype=torch.bfloat16,
-            attn_implementation="sdpa",
+            low_cpu_mem_usage=True,
             trust_remote_code=True,
         )
 
@@ -51,9 +54,9 @@ class QuestionsGenerator:
             outputs = self.pipe(
                 formatted_prompt,
                 max_new_tokens=max_new_tokens,
-                do_sample=True,
+                do_sample=False,
                 num_beams=1,
-                temperature=0.7,
+                temperature=0.0,
                 top_k=50,
                 top_p=0.95,
                 eos_token_id=self.tokenizer.eos_token_id,
@@ -65,17 +68,17 @@ class QuestionsGenerator:
             return generated_text
 
         except Exception as e:
-            print(f"Ошибка при генерации текста: {e}")
+            logger.info(f"Ошибка при генерации текста: {e}")
             return ""
 
     def generate_questions(
         self, resume_text: str, vacancy_text: str, num_questions: int = 8
     ) -> list:
         system_prompt = (
-            "Ты — опытный HR-интервьюер. Не пиши лишние комментарии. Твоя задача — придумать конкретные и осмысленные вопросы для интервью, "
-            "исходя из требований вакансии и опыта кандидата. "
+            "Ты — опытный HR-интервьюер. Никакого дополнительного текста и комментариев. Твоя задача — придумать конкретные и осмысленные вопросы для интервью, "
+            "исходя из требований вакансии и опыта кандидата. Верни ТОЛЬКО вопросы."
         )
-
+        
         user_prompt = (
             f"Составь список из {num_questions} коротких вопросов для собеседования.\n"
             f"Основывайся на резюме и вакансии.\n\n"

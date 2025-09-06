@@ -1,18 +1,21 @@
 import zipfile
 from io import BytesIO
-from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message
+from fastapi import Depends
+from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.analize import analyze_resume
 from app.database.core import get_async_session
 from app.parsing import document_to_text
+from app.database.core import async_session
+
 
 router = Router()
 
-# Константы ограничений
 MAX_VACANCY_SIZE = 5 * 1024 * 1024  # 5MB
 MAX_ZIP_SIZE = 10 * 1024 * 1024  # 10MB
 MAX_RESUME_SIZE = 2 * 1024 * 1024  # 2MB
@@ -53,7 +56,6 @@ async def handle_vacancy_file(message: Message):
         )
         return
 
-    # Скачиваем файл
     try:
         file = await message.bot.get_file(message.document.file_id)
         downloaded = await message.bot.download_file(file.file_path)
@@ -89,8 +91,7 @@ async def handle_vacancy_file(message: Message):
 
 @router.message(F.document & F.document.file_name.endswith(".zip"))
 async def handle_resume_zip(
-    message: Message,
-    session: AsyncSession = Depends(get_async_session),
+    message: Message
 ):
     user_id = message.from_user.id
     file_name = message.document.file_name
@@ -110,13 +111,11 @@ async def handle_resume_zip(
     user_data = user_file_storage.get(user_id, {})
     if "vacancy_file" not in user_data:
         await message.answer(
-            "❌ <b>Сначала загрузите файл с вакансией!</b>\n"
-            "📄 Форматы: <code>.txt</code> или <code>.pdf</code>",
+            "❌ <b>Сначала загрузите файл с вакансией!</b>\n",
             parse_mode="HTML",
         )
         return
 
-    # Скачиваем и проверяем архив
     try:
         file = await message.bot.get_file(message.document.file_id)
         downloaded = await message.bot.download_file(file.file_path)
@@ -138,7 +137,6 @@ async def handle_resume_zip(
                 )
                 return
 
-            # Проверяем размер каждого файла
             oversized_files = []
             for resume_name in resume_files:
                 file_info = archive.getinfo(resume_name)
@@ -158,7 +156,6 @@ async def handle_resume_zip(
                 )
                 return
 
-            # --- Обработка нейросетью ---
             vacancy_file = user_data["vacancy_file"]
             vacancy_bytes = vacancy_file["bytes"]
             vacancy_format = vacancy_file["format"]
@@ -167,15 +164,15 @@ async def handle_resume_zip(
             for resume_name in resume_files:
                 resume_bytes = archive.read(resume_name)
                 resume_format = resume_name.split(".")[-1].lower()
-
-                # Анализируем резюме
-                await analyze_resume(
-                    message=message,
-                    resume_bytes=resume_bytes,
-                    vacancy_text=vacancy_text,
-                    file_format=resume_format,
-                    session=session,
-                )
+                
+                async with async_session() as session, session.begin():
+                    await analyze_resume(
+                        message=message,
+                        resume_bytes=resume_bytes,
+                        vacancy_text=vacancy_text,
+                        file_format=resume_format,
+                        session=session,
+                    )
 
     except zipfile.BadZipFile:
         await message.answer(
@@ -186,10 +183,10 @@ async def handle_resume_zip(
         return
     except Exception as e:
         await message.answer(
-            f"❌ <b>Ошибка при обработке архива!</b>\n\n"
-            f"<code>{str(e)}</code>",
+            f"❌ <b>Ошибка при обработке архива!</b>\n\n",
             parse_mode="HTML",
         )
+        logger.error(e)
         return
 
     user_data["resume_zip"] = {
@@ -208,10 +205,7 @@ async def handle_resume_zip(
 async def handle_unknown_document(message: Message):
     file_name = message.document.file_name
     await message.answer(
-        f"❌ <b>Файл</b> <code>{file_name}</code> <b>не подходит</b>\n\n"
-        "📎 <b>Нужно отправить:</b>\n"
-        "• Файл вакансии: <code>.txt</code> или <code>.pdf</code>\n"
-        "• ZIP-архив с резюме: <code>.zip</code>",
+        f"❌ <b>Файл</b> <code>{file_name}</code> <b>не подходит</b>\n\n",
         parse_mode="HTML",
     )
 
@@ -221,7 +215,7 @@ async def handle_text(message: Message):
     await message.answer(
         "📎 <b>Я работаю только с файлами</b>\n\n"
         "📄 <b>Пожалуйста, загрузите:</b>\n"
-        "• Файл вакансии (<code>.txt</code> или <code>.pdf</code>)\n"
+        "• Файл вакансии\n"
         "• ZIP-архив с резюме (<code>.zip</code>)\n\n"
         "⚡ <b>Ограничения:</b>\n"
         "• Вакансия: до 5MB\n"
