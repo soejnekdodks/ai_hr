@@ -19,7 +19,7 @@
 
 <hr>
 
-# КОД АНДРОИД ПРИЛОЖЕНИЯ
+# ANDROID ПРИЛОЖЕНИЕ
 
 ### Ссылка на репозиторий -  https://github.com/tikhonlym/VTB-hackaton
 
