@@ -1,1 +1,1 @@
-from app.database.query import candidate, interview
+from app.database.query import candidate, interview, questions
