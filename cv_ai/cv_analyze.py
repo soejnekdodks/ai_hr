@@ -1,29 +1,28 @@
 import re
 
 import torch
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    BitsAndBytesConfig,
-    pipeline,
-)
-
+from config import config
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
 
 class ResumeVacancyAnalyze:
-    def __init__(self, model_name: str = "Vikhrmodels/Vikhr-7B-instruct_0.4"):
-        self.model_name = model_name
+    def __init__(self):
+        self.model_name = config.BASE_MODEL
 
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.bfloat16,  # можно заменить на torch.float16
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_quant_type="nf4",
-        )
+        # Если резко захотели ебнутый прирост производительности
+        
+        # bnb_config = BitsAndBytesConfig(
+        #     load_in_4bit=True,
+        #     bnb_4bit_compute_dtype=torch.bfloat16,  # можно заменить на torch.float16
+        #     bnb_4bit_use_double_quant=True,
+        #     bnb_4bit_quant_type="nf4"
+        # )
+
+        # quantization_config=bnb_config, # вместо torch_dtype
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            device_map="cuda",  # сам распределит по GPU/CPU
-            quantization_config=bnb_config,  # вместо torch_dtype
+            device_map="auto",              # сам распределит по GPU/CPU
+            torch_dtype=torch.bfloat16,
             attn_implementation="sdpa",
             trust_remote_code=True,
         )

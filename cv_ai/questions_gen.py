@@ -1,27 +1,27 @@
 import torch
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    BitsAndBytesConfig,
-    pipeline,
-)
-
+from config import config
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
 
 class QuestionsGenerator:
-    def __init__(self, model_name: str = "Vikhrmodels/Vikhr-7B-instruct_0.4"):
-        self.model_name = model_name
+    def __init__(self):
+        self.model_name = config.BASE_MODEL
 
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.bfloat16,  # можно заменить на torch.float16
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_quant_type="nf4",
-        )
+
+        # Если резко захотели ебнутый прирост производительности
+
+        # bnb_config = BitsAndBytesConfig(
+        #     load_in_4bit=True,
+        #     bnb_4bit_compute_dtype=torch.bfloat16,  # можно заменить на torch.float16
+        #     bnb_4bit_use_double_quant=True,
+        #     bnb_4bit_quant_type="nf4"
+        # )
+
+        # quantization_config=bnb_config, # вместо torch_dtype
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            device_map="cuda",  # сам распределит по GPU/CPU
-            quantization_config=bnb_config,  # вместо torch_dtype
+            device_map="auto",              # сам распределит по GPU/CPU
+            torch_dtype=torch.bfloat16,
             attn_implementation="sdpa",
             trust_remote_code=True,
         )
@@ -65,12 +65,10 @@ class QuestionsGenerator:
             print(f"Ошибка при генерации текста: {e}")
             return ""
 
-    def generate_questions(
-        self, resume_text: str, vacancy_text: str, num_questions: int = 10
-    ) -> list:
+    def generate_questions(self, resume_text: str, vacancy_text: str, num_questions: int = 8) -> list:
         system_prompt = (
-            "Ты — опытный HR-интервьюер. Твоя задача — придумать конкретные и осмысленные вопросы для интервью, "
-            "исходя из требований вакансии и опыта кандидата. Формулируй вопросы кратко и по делу."
+            "Ты — опытный HR-интервьюер. Не пиши лишние комментарии. Твоя задача — придумать конкретные и осмысленные вопросы для интервью, "
+            "исходя из требований вакансии и опыта кандидата. "
         )
 
         user_prompt = (
@@ -83,7 +81,7 @@ class QuestionsGenerator:
 
         full_prompt = f"{system_prompt}\n\n{user_prompt}"
 
-        raw_output = self._run_model(full_prompt, max_new_tokens=64)
+        raw_output = self._run_model(full_prompt, max_new_tokens=256)
 
         # Разбиваем результат построчно и убираем пустые строки
         questions = [q.strip("- ") for q in raw_output.split("\n") if q.strip()]
