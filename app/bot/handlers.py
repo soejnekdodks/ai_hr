@@ -36,8 +36,6 @@ async def cmd_start_help(message: Message):
         "⚡ <i>Просто отправьте файлы в нужных форматах, и бот сделает всё остальное!</i>"
     )
     await message.answer(welcome_text, parse_mode="HTML")
-
-
 @router.message(
     F.document
     & (F.document.file_name.endswith(".txt") | F.document.file_name.endswith(".pdf"))
@@ -55,19 +53,38 @@ async def handle_vacancy_file(message: Message):
         )
         return
 
-    file_id = message.document.file_id
-    file_name = message.document.file_name
+    # Скачиваем файл
+    try:
+        file = await message.bot.get_file(message.document.file_id)
+        downloaded = await message.bot.download_file(file.file_path)
+        file_bytes = downloaded.read()
+        
+        file_name = message.document.file_name
+        file_format = file_name.split(".")[-1].lower()
 
-    user_data = user_file_storage.get(message.from_user.id, {})
-    user_data["vacancy_file"] = {"id": file_id, "name": file_name, "size": file_size}
-    user_file_storage[message.from_user.id] = user_data
+        user_data = user_file_storage.get(message.from_user.id, {})
+        user_data["vacancy_file"] = {
+            "id": message.document.file_id,
+            "name": file_name,
+            "size": file_size,
+            "bytes": file_bytes,  # Сохраняем содержимое файла
+            "format": file_format  # Сохраняем формат файла
+        }
+        user_file_storage[message.from_user.id] = user_data
 
-    await message.answer(
-        f"✅ <b>Вакансия</b> <code>{file_name}</code> <b>принята!</b>\n"
-        f"📊 <b>Размер:</b> {file_size / 1024 / 1024:.1f}MB\n\n"
-        "📦 Теперь загрузите ZIP-архив с резюме.",
-        parse_mode="HTML",
-    )
+        await message.answer(
+            f"✅ <b>Вакансия</b> <code>{file_name}</code> <b>принята!</b>\n"
+            f"📊 <b>Размер:</b> {file_size / 1024 / 1024:.1f}MB\n\n"
+            "📦 Теперь загрузите ZIP-архив с резюме.",
+            parse_mode="HTML",
+        )
+        
+    except Exception as e:
+        await message.answer(
+            f"❌ <b>Ошибка при загрузке файла вакансии!</b>\n\n"
+            f"<code>{str(e)}</code>",
+            parse_mode="HTML",
+        )
 
 
 @router.message(F.document & F.document.file_name.endswith(".zip"))
