@@ -11,7 +11,7 @@ dp = Dispatcher()
 dp.include_router(router)
 
 
-def start_bot():
+async def start_bot():
     logger.info("Start polling")
-    asyncio.run(dp.start_polling(bot))
+    await dp.start_polling(bot)
     logger.info("Stop polling")
