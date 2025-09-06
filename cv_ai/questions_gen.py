@@ -1,5 +1,4 @@
 import torch
-from cv_ai.config import config
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
