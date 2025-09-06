@@ -19,13 +19,7 @@ async def get_questions(session: AsyncSession, interview_id: int) -> list[Questi
 
 
 async def set_answers(session: AsyncSession, update_data: list[dict[str, Any]]) -> None:
-    changed_rows = (
-        (await session.execute(update(Question).returning(Question.id), update_data))
-        .scalars()
-        .all
-    )
-    if len(changed_rows) != len(update_data):
-        raise ValueError("Can't set all answers")
+    await session.execute(update(Question), update_data)
     await session.flush()
 
 
