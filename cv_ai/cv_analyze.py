@@ -72,18 +72,23 @@ class ResumeVacancyAnalyze:
             return ""
 
     def analyze_resume_vs_vacancy(self, bot: Bot, resume_text: str, vacancy_text: str) -> float:
-        system_prompt = "Ты - эксперт по подбору персонала. Никакого дополнительного текста. Выводи только число от 0 до 100"
+        # system_prompt = "Ты - эксперт по подбору персонала. Никакого дополнительного текста. Выводи только число от 0 до 100"
+
+        # user_prompt = (
+        #     f"Оцени возможность кандидата пройти по данному резюме на работу по вакансии по шкале от 0 до 100, где 0 - полное несоответствие, 100 - идеальное соответствие.\n\n"
+        #     f"ВАКАНСИЯ:\n{vacancy_text}\n\n"
+        #     f"РЕЗЮМЕ:\n{resume_text}\n\n"
+        #     f"Оценка соответствия (только число):"
+        # )
+        system_prompt = "Ты - эксперт по фруктам"
 
         user_prompt = (
-            f"Оцени возможность кандидата пройти по данному резюме на работу по вакансии по шкале от 0 до 100, где 0 - полное несоответствие, 100 - идеальное соответствие.\n\n"
-            f"ВАКАНСИЯ:\n{vacancy_text}\n\n"
-            f"РЕЗЮМЕ:\n{resume_text}\n\n"
-            f"Оценка соответствия (только число):"
+            f"Чем яблоко отличается от груши?"
         )
 
         full_prompt = f"{system_prompt}\n\n{user_prompt}"
 
-        raw_output = self._run_model(full_prompt, max_new_tokens=10)
+        raw_output = self._run_model(full_prompt, max_new_tokens=512)
         logger.info(f"Модель ответила: '{raw_output}'")
         
         # Ищем число в ответе

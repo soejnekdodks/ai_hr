@@ -87,6 +87,6 @@ class AnswersAnalyzer:
 
         full_prompt = f"{system_prompt}\n\n{user_prompt}"
 
-        raw_output = self._run_model(full_prompt, max_new_tokens=256)
+        raw_output = self._run_model(full_prompt, max_new_tokens=512)
 
         return {raw_output}
