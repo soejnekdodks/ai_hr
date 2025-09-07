@@ -31,7 +31,6 @@ from aiogram import Bot
 
 bot = Bot(config.TG_TOKEN)
 
-
 async def analyze_resume(
     message: Message,
     resume_bytes: bytes,
@@ -79,12 +78,17 @@ async def analyze_resume(
             f"🔗 Ссылка на интервью: {config.DOMAIN}/api/v1/deeplink?id={alias_id}\n"
         )
 
-        cv_file = BytesIO(candidate.cv)
+        # Создаем BytesIO из байтов и устанавливаем позицию на начало
+        cv_file = BytesIO(resume_bytes)
+        cv_file.seek(0)  # Важно: перематываем на начало файла
         filename = f"resume_candidate_{candidate.id}{file_info['extension']}"
 
+        # Создаем InputFile правильно
+        input_file = InputFile(cv_file, filename=filename)
+        
         await bot.send_document(
             chat_id=hr_chat_id,
-            document=InputFile(cv_file, filename=filename),
+            document=input_file,
             caption=caption,
         )
         
@@ -97,7 +101,6 @@ async def analyze_resume(
             f"❌ Резюме {file_format.upper()} не прошло отбор "
             f"(совпадение {match_percentage:.1f}%)."
         )
-
 
 def get_file_info(file_bytes: bytes, original_format: str) -> dict:
     """Определяет информацию о файле по сигнатурам"""
