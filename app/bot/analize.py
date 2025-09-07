@@ -5,7 +5,8 @@ from datetime import timedelta
 from io import BytesIO
 
 from aiogram import Router
-from aiogram.types import InputFile, Message
+from aiogram.types import Message
+from aiogram.types.input_file import InputFile
 from fastapi import Depends
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -83,15 +84,16 @@ async def analyze_resume(
         cv_file.seek(0)  # Важно: перематываем на начало файла
         filename = f"resume_candidate_{candidate.id}{file_info['extension']}"
 
-        # Создаем InputFile правильно
-        input_file = InputFile(cv_file, filename=filename)
-        
+        cv_file = BytesIO(resume_bytes)
+        cv_file.seek(0)
+        filename = f"resume_candidate_{candidate.id}{file_info['extension']}"
+
         await bot.send_document(
             chat_id=hr_chat_id,
-            document=input_file,
+            document=(filename, cv_file),  # Передаем как кортеж (filename, file_object)
             caption=caption,
-        )
-        
+        )       
+
         await message.answer(
             f"✅ Резюме принято! Совпадение: {match_percentage:.1f}%. "
             f"HR получил уведомление."
