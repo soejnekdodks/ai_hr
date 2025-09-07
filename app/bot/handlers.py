@@ -157,7 +157,6 @@ async def handle_resume_zip(
                 )
                 return
 
-            # --- Обработка нейросетью ---
             vacancy_file = user_data["vacancy_file"]
             vacancy_bytes = vacancy_file["bytes"]
             vacancy_format = vacancy_file["format"]

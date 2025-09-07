@@ -5,6 +5,26 @@ from striprtf.striprtf import rtf_to_text
 import fitz
 
 
+def txt_to_text(txt_bytes: bytes) -> str:
+    try:
+        # Пытаемся декодировать с разными кодировками
+        encodings = ['utf-8', 'windows-1251', 'cp866', 'iso-8859-1', 'utf-16']
+        
+        for encoding in encodings:
+            try:
+                text = txt_bytes.decode(encoding)
+                return text
+            except UnicodeDecodeError:
+                continue
+        
+        # Если ни одна кодировка не подошла, пробуем с игнорированием ошибок
+        return txt_bytes.decode('utf-8', errors='ignore')
+        
+    except Exception as e:
+        print(f"Ошибка при чтении TXT: {e}")
+        return ""
+
+
 def pdf_to_text(pdf_bytes: bytes) -> str:
     try:
         text = ""
@@ -70,6 +90,9 @@ def document_to_text(file_bytes: bytes, file_extension: str) -> str:
         elif file_extension == 'rtf':
             return rtf_to_text_bytes(file_bytes)
         
+        elif file_extension == 'txt':
+            return txt_to_text(file_bytes)
+        
         else:
             print(f"Неподдерживаемый формат: {file_extension}")
             return ""
@@ -77,13 +100,3 @@ def document_to_text(file_bytes: bytes, file_extension: str) -> str:
     except Exception as e:
         print(f"Ошибка при обработке {file_extension}: {e}")
         return ""
-
-
-
-
-
-
-
-
-
- 
