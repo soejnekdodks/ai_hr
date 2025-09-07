@@ -110,8 +110,7 @@ async def handle_resume_zip(
     user_data = user_file_storage.get(user_id, {})
     if "vacancy_file" not in user_data:
         await message.answer(
-            "❌ <b>Сначала загрузите файл с вакансией!</b>\n"
-            "📄 Форматы: <code>.txt</code> или <code>.pdf</code>",
+            "❌ <b>Сначала загрузите файл с вакансией!</b>\n",
             parse_mode="HTML",
         )
         return
@@ -208,10 +207,7 @@ async def handle_resume_zip(
 async def handle_unknown_document(message: Message):
     file_name = message.document.file_name
     await message.answer(
-        f"❌ <b>Файл</b> <code>{file_name}</code> <b>не подходит</b>\n\n"
-        "📎 <b>Нужно отправить:</b>\n"
-        "• Файл вакансии: <code>.txt</code> или <code>.pdf</code>\n"
-        "• ZIP-архив с резюме: <code>.zip</code>",
+        f"❌ <b>Файл</b> <code>{file_name}</code> <b>не подходит</b>\n\n",
         parse_mode="HTML",
     )
 
@@ -221,7 +217,7 @@ async def handle_text(message: Message):
     await message.answer(
         "📎 <b>Я работаю только с файлами</b>\n\n"
         "📄 <b>Пожалуйста, загрузите:</b>\n"
-        "• Файл вакансии (<code>.txt</code> или <code>.pdf</code>)\n"
+        "• Файл вакансии\n"
         "• ZIP-архив с резюме (<code>.zip</code>)\n\n"
         "⚡ <b>Ограничения:</b>\n"
         "• Вакансия: до 5MB\n"

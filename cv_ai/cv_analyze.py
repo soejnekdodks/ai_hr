@@ -93,8 +93,8 @@ class ResumeVacancyAnalyze:
                 return max(0.0, min(100.0, num))
             else:
                 print(f"Не удалось извлечь число из ответа: '{raw_output}'")
-                return 0.0
+                return -1
 
         except Exception as e:
             print(f"Ошибка при анализе соответствия: {e}")
-            return 0.0
+            return -1

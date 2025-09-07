@@ -1,3 +1,4 @@
+import uuid
 import zipfile
 from io import BytesIO
 from datetime import timedelta
@@ -27,9 +28,6 @@ router = Router()
 from aiogram import Bot
 bot = Bot(config.TG_TOKEN)
 
-def create_mock():
-    """Заглушка для создания mock URL"""
-    return "https://example.com/interview/mock-id"
 
 async def analyze_resume(
     message: Message,
@@ -38,18 +36,17 @@ async def analyze_resume(
     file_format: str,
     session: AsyncSession,
 ):
-    """Анализ резюме и создание интервью (если прошло отбор)."""
     cv_analyze = ResumeVacancyAnalyze()
     resume_text = document_to_text(resume_bytes, file_format)
 
+
     match_percentage = cv_analyze.analyze_resume_vs_vacancy(resume_text, vacancy_text)
-    url = create_mock()
+
+    await bot.send_message(f"резюме: {resume_text}\n\nвака: {vacancy_text}\n\nметч: {match_percentage}")
 
     if match_percentage > 70.0:
-        # --- Создаём кандидата ---
         candidate: Candidate = await create_candidate(session=session, cv=resume_bytes)
 
-        # --- Генерируем вопросы ---
         qg = QuestionsGenerator()
         questions = qg.generate_questions(
             resume_text=resume_text,
@@ -57,40 +54,34 @@ async def analyze_resume(
             num_questions=config.NUMS_OF_QUESTIONS,
         )
 
-        # --- Создаём интервью ---
-        interview_id = await create_interview(
+        alias_id = uuid.uuid4()
+
+        await create_interview(
             session=session,
             candidate_id=candidate.id,
             questions=questions,
             expiration_time=timedelta(days=7),
+            alias_id=alias_id
         )
 
-        # Получаем chat_id HR-а
         hr_chat_id = message.chat.id
-        
-        # --- Формируем сообщение HR ---
+       
         file_info = get_file_info(resume_bytes, file_format)
         caption = (
             "🎯 Новый кандидат прошел первичный отбор!\n\n"
-            f"🆔 ID кандидата: {candidate.id}\n"
             f"⚡️ Совпадение с вакансией: {match_percentage:.1f}%\n"
-            f"📋 Интервью ID: {interview_id}\n"
-            f"🔗 Ссылка на интервью: {url}\n"
-            f"📄 Формат: {file_info['format']}\n"
-            f"📏 Размер: {format_file_size(file_info['size_bytes'])}"
+            f"🔗 Ссылка на интервью: {config.DOMAIN}/api/v1/deeplink?id={alias_id}\n"
         )
 
         cv_file = BytesIO(candidate.cv)
         filename = f"resume_candidate_{candidate.id}{file_info['extension']}"
 
-        # Отправляем резюме HR-у
         await bot.send_document(
             chat_id=hr_chat_id,
             document=InputFile(cv_file, filename=filename),
             caption=caption,
         )
         
-        # Подтверждение пользователю
         await message.answer(
             f"✅ Резюме принято! Совпадение: {match_percentage:.1f}%. "
             f"HR получил уведомление."
