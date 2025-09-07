@@ -3,7 +3,7 @@ import uuid
 from datetime import timedelta
 from io import BytesIO
 from aiogram import types, Bot, Router
-from aiogram.types import InputFile
+from aiogram.types import BufferedInputFile, FSInputFile  # Измененный импорт
 from fastapi import Depends
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,30 +25,26 @@ MAX_RESUME_SIZE = 10 * 1024 * 1024  # 10MB
 router = Router()
 bot = Bot(config.TG_TOKEN)
 
-
 def wrap_media(bytesio, filename, **kwargs):
-    """Wraps a BytesIO object into InputFile and rewinds to the beginning"""
+    """Wraps a BytesIO object into BufferedInputFile and rewinds to the beginning"""
     bytesio.seek(0)  # Ensure file pointer is at the beginning
-    return InputFile(bytesio, filename=filename, **kwargs)
+    # Используем BufferedInputFile для работы с данными в памяти
+    return BufferedInputFile(
+        file=bytesio.getvalue(),  # Получаем байты из BytesIO
+        filename=filename,
+        **kwargs
+    )
 
-
-def prepare_resume_file(resume_bytes: bytes, candidate: Candidate, file_info: dict) -> InputFile:
-    """Prepares the resume file for sending by saving it to the filesystem."""
-    # Создаем директорию для сохранения файлов, если она не существует
-    save_dir = os.path.join(os.getcwd(), "resumes")  # Путь для сохранения резюме
-    os.makedirs(save_dir, exist_ok=True)
-    
+def prepare_resume_file(resume_bytes: bytes, candidate: Candidate, file_info: dict) -> BufferedInputFile:
+    """Prepares the resume file for sending using in-memory buffer."""
     # Генерируем имя файла
     filename = f"resume_candidate_{candidate.id}{file_info['extension']}"
-    file_path = os.path.join(save_dir, filename)
     
-    # Сохраняем файл на диск
-    with open(file_path, 'wb') as file:
-        file.write(resume_bytes)
-    
-    # Возвращаем путь в InputFile для отправки через Telegram
-    return InputFile(file_path, filename=filename)
-
+    # Создаем файл в памяти используя BufferedInputFile
+    return BufferedInputFile(
+        file=resume_bytes,
+        filename=filename
+    )
 
 async def analyze_resume(
     message: types.Message,
@@ -81,11 +77,11 @@ async def analyze_resume(
         file_info = get_file_info(resume_bytes, file_format)
         caption = prepare_resume_caption(match_percentage, alias_id)
 
-        # Сохраняем файл на диск и получаем путь
-        file_path = prepare_resume_file(resume_bytes, candidate, file_info)
+        # Создаем файл в памяти
+        input_file = prepare_resume_file(resume_bytes, candidate, file_info)
 
-        # Отправляем файл через Telegram, используя путь
-        await message.answer_document(file_path, caption=caption)
+        # Отправляем файл через Telegram
+        await message.answer_document(input_file, caption=caption)
 
         # Step 5: Confirm to the user
         await message.answer(
