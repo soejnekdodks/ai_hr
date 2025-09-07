@@ -1,7 +1,7 @@
 from datetime import timedelta
 
-from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.database.query.candidate import get_candidate
 from app.database.schema import Interview

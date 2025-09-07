@@ -11,10 +11,16 @@ class Config(BaseSettings):
     MAX_FILE_SIZE_DOWNLOAD: int = Field(
         default=128 * 1024**2, description="Ограничение по загрузке в трекер в байтах"
     )
-    DATABASE_URL: str = Field(description="URL для доступа к бд")
-    BOT_USERNAME: str = Field(description="Username бота в телеграм")
+
+    PG_NAME: str = Field(description="Название бд в postgresql", default="pg_name")
+    PG_LOGIN: str = Field(description="Логин бд в postgresql", default="pg_log")
+    PG_PASSWORD: str = Field(description="Пароль бд в postgresql", default="pg_pass")
+
+    OLLAMA_URL: str = Field(
+        description="URL для подключения к ollama", default="http://localhost:11434"
+    )
     LLM: str = Field(description="Используемая llm", default="llama3")
     API_PORT: int = Field(description="Порт сервера uvicorn")
 
 
-config = Config()
+config = Config()  # type: ignore

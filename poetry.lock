@@ -1074,6 +1074,28 @@ files = [
 tests = ["pytest"]
 
 [[package]]
+name = "httpcore"
+version = "1.0.9"
+description = "A minimal low-level HTTP client."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "httpcore-1.0.9-py3-none-any.whl", hash = "sha256:2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55"},
+    {file = "httpcore-1.0.9.tar.gz", hash = "sha256:6e34463af53fd2ab5d807f399a9b45ea31c3dfa2276f15a2c3f00afff6e176e8"},
+]
+
+[package.dependencies]
+certifi = "*"
+h11 = ">=0.16"
+
+[package.extras]
+asyncio = ["anyio (>=4.0,<5.0)"]
+http2 = ["h2 (>=3,<5)"]
+socks = ["socksio (==1.*)"]
+trio = ["trio (>=0.22.0,<1.0)"]
+
+[[package]]
 name = "httplib2"
 version = "0.30.0"
 description = "A comprehensive HTTP client library."
@@ -1143,6 +1165,31 @@ files = [
 
 [package.extras]
 test = ["Cython (>=0.29.24)"]
+
+[[package]]
+name = "httpx"
+version = "0.28.1"
+description = "The next generation HTTP client."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "httpx-0.28.1-py3-none-any.whl", hash = "sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad"},
+    {file = "httpx-0.28.1.tar.gz", hash = "sha256:75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc"},
+]
+
+[package.dependencies]
+anyio = "*"
+certifi = "*"
+httpcore = "==1.*"
+idna = "*"
+
+[package.extras]
+brotli = ["brotli ; platform_python_implementation == \"CPython\"", "brotlicffi ; platform_python_implementation != \"CPython\""]
+cli = ["click (==8.*)", "pygments (==2.*)", "rich (>=10,<14)"]
+http2 = ["h2 (>=3,<5)"]
+socks = ["socksio (==1.*)"]
+zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "huggingface-hub"
@@ -1756,6 +1803,18 @@ specs = ["black"]
 ssh = ["paramiko"]
 tests = ["coverage (>=5.2.1)", "pandas (>=1.5.0)", "pytest (>=6)", "pytest-cov (>=2.11)", "pytest-doctestplus", "pytest-env", "pytest-timeout (>=1.4)", "pytest-xdist (>=2.5)", "sphinx (>=7)"]
 xvfbwrapper = ["xvfbwrapper"]
+
+[[package]]
+name = "nodeenv"
+version = "1.9.1"
+description = "Node.js virtual environment builder"
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
+groups = ["dev"]
+files = [
+    {file = "nodeenv-1.9.1-py2.py3-none-any.whl", hash = "sha256:ba11c9782d29c27c70ffbdda2d7415098754709be8a7056d79a737cd901155c9"},
+    {file = "nodeenv-1.9.1.tar.gz", hash = "sha256:6ec12890a2dab7946721edbfbcd91f3319c6ccc9aec47be7c7e6b7011ee6645f"},
+]
 
 [[package]]
 name = "numpy"
@@ -2734,6 +2793,24 @@ tests = ["pydot[dev]", "pytest", "pytest-cov", "pytest-xdist[psutil]", "tox"]
 types = ["mypy"]
 
 [[package]]
+name = "pymupdf"
+version = "1.26.4"
+description = "A high performance Python library for data extraction, analysis, conversion & manipulation of PDF (and other) documents."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "pymupdf-1.26.4-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:cb95562a0a63ce906fd788bdad5239063b63068cf4a991684f43acb09052cb99"},
+    {file = "pymupdf-1.26.4-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:67e9e6b45832c33726651c2a031e9a20108fd9e759140b9e843f934de813a7ff"},
+    {file = "pymupdf-1.26.4-cp39-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:2604f687dd02b6a1b98c81bd8becfc0024899a2d2085adfe3f9e91607721fd22"},
+    {file = "pymupdf-1.26.4-cp39-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:973a6dda61ebd34040e4df3753bf004b669017663fbbfdaa294d44eceba98de0"},
+    {file = "pymupdf-1.26.4-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:299a49797df5b558e695647fa791329ba3911cbbb31ed65f24a6266c118ef1a7"},
+    {file = "pymupdf-1.26.4-cp39-abi3-win32.whl", hash = "sha256:51b38379aad8c71bd7a8dd24d93fbe7580c2a5d9d7e1f9cd29ebbba315aa1bd1"},
+    {file = "pymupdf-1.26.4-cp39-abi3-win_amd64.whl", hash = "sha256:0b6345a93a9afd28de2567e433055e873205c52e6b920b129ca50e836a3aeec6"},
+    {file = "pymupdf-1.26.4.tar.gz", hash = "sha256:be13a066d42bfaed343a488168656637c4d9843ddc63b768dc827c9dfc6b9989"},
+]
+
+[[package]]
 name = "pyparsing"
 version = "3.2.3"
 description = "pyparsing module - Classes and methods to define and execute parsing grammars"
@@ -2770,6 +2847,27 @@ files = [
     {file = "pypdfium2-4.30.0-py3-none-win_arm64.whl", hash = "sha256:119b2969a6d6b1e8d55e99caaf05290294f2d0fe49c12a3f17102d01c441bd29"},
     {file = "pypdfium2-4.30.0.tar.gz", hash = "sha256:48b5b7e5566665bc1015b9d69c1ebabe21f6aee468b509531c3c8318eeee2e16"},
 ]
+
+[[package]]
+name = "pyright"
+version = "1.1.405"
+description = "Command line wrapper for pyright"
+optional = false
+python-versions = ">=3.7"
+groups = ["dev"]
+files = [
+    {file = "pyright-1.1.405-py3-none-any.whl", hash = "sha256:a2cb13700b5508ce8e5d4546034cb7ea4aedb60215c6c33f56cec7f53996035a"},
+    {file = "pyright-1.1.405.tar.gz", hash = "sha256:5c2a30e1037af27eb463a1cc0b9f6d65fec48478ccf092c1ac28385a15c55763"},
+]
+
+[package.dependencies]
+nodeenv = ">=1.6.0"
+typing-extensions = ">=4.1"
+
+[package.extras]
+all = ["nodejs-wheel-binaries", "twine (>=3.4.1)"]
+dev = ["twine (>=3.4.1)"]
+nodejs = ["nodejs-wheel-binaries"]
 
 [[package]]
 name = "python-dateutil"
@@ -3877,7 +3975,7 @@ version = "4.15.0"
 description = "Backported and Experimental Type Hints for Python 3.9+"
 optional = false
 python-versions = ">=3.9"
-groups = ["main"]
+groups = ["main", "dev"]
 files = [
     {file = "typing_extensions-4.15.0-py3-none-any.whl", hash = "sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548"},
     {file = "typing_extensions-4.15.0.tar.gz", hash = "sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466"},
@@ -4476,4 +4574,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "4d4c1b78274b235d3ea0749bb8a3596958eda638ec041efeb3c488a33d992d69"
+content-hash = "86f9244a9e8591e5f9946d8201a1bf46f5f93e20859dea76335f09cd5ab672b3"

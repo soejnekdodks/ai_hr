@@ -1,7 +1,6 @@
 import json
 
 import numpy as np
-import torch
 from datasets import Dataset
 from seqeval.metrics import f1_score, precision_score, recall_score
 from sklearn.model_selection import train_test_split
