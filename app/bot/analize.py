@@ -17,6 +17,8 @@ from app.parsing import document_to_text
 from cv_ai.cv_analyze import ResumeVacancyAnalyze
 from cv_ai.questions_gen import QuestionsGenerator
 from app.database.schema import Candidate
+from loguru import logger
+
 
 # Максимальные значения для проверки архива
 MAX_ZIP_SIZE = 50 * 1024 * 1024  # 50MB
@@ -39,10 +41,9 @@ async def analyze_resume(
     cv_analyze = ResumeVacancyAnalyze()
     resume_text = document_to_text(resume_bytes, file_format)
 
-
     match_percentage = cv_analyze.analyze_resume_vs_vacancy(bot, resume_text, vacancy_text)
 
-    await bot.send_message(message.chat.id, "резюме: {resume_text}\n\nвака: {vacancy_text}\n\nметч: {match_percentage}")
+    logger.info(f"резюме: {resume_text}\n\nвака: {vacancy_text}\n\nметч: {match_percentage}")
 
     if match_percentage > 70.0:
         candidate: Candidate = await create_candidate(session=session, cv=resume_bytes)
