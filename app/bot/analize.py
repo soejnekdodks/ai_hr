@@ -50,7 +50,7 @@ async def analyze_resume(
 
     logger.info(f"резюме: {resume_text}\n\nвака: {vacancy_text}\n\nметч: {match_percentage}")
 
-    if match_percentage > 70.0:
+    if match_percentage >= 70.0:
         candidate: Candidate = await create_candidate(session=session, cv=resume_bytes)
 
         qg = QuestionsGenerator()
