@@ -61,7 +61,7 @@ async def analyze_resume(
     match_percentage = cv_analyze.analyze_resume_vs_vacancy(resume, vacancy_text)
 
     if match_percentage >= 70.0:
-        candidate = await create_candidate(session=session, cv=resume_bytes)
+        candidate = await create_candidate(session=session, cv=resume_bytes, chat_id = str(message.chat.id))
 
         qg = QuestionsGenerator()
         questions = qg.generate_questions(vacancy_text, resume, config.NUMS_OF_QUESTIONS)
