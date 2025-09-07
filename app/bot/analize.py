@@ -46,10 +46,10 @@ async def analyze_resume(
     resume_text = shrink.resume_shrink(resume_text_from_bytes)
     vacancy_text = shrink.vacancy_shrink(vacancy_text)
         
-    match_percentage = cv_analyze.analyze_resume_vs_vacancy(resume_text, vacancy_text)
+    # match_percentage = cv_analyze.analyze_resume_vs_vacancy(resume_text, vacancy_text)
 
-    logger.info(f"резюме: {resume_text}\n\nвака: {vacancy_text}\n\nметч: {match_percentage}")
-
+    # logger.info(f"резюме: {resume_text}\n\nвака: {vacancy_text}\n\nметч: {match_percentage}")
+    match_percentage = 100
     if match_percentage >= 70.0:
         candidate: Candidate = await create_candidate(session=session, cv=resume_bytes)
 
