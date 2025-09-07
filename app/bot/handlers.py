@@ -163,14 +163,14 @@ async def handle_resume_zip(
                 resume_bytes = archive.read(resume_name)
                 resume_format = resume_name.split(".")[-1].lower()
                 
-                async with get_async_session() as session:
-                    await analyze_resume(
-                        message=message,
-                        resume_bytes=resume_bytes,
-                        vacancy_text=vacancy_text,
-                        file_format=resume_format,
-                        session=session,
-                    )
+                session = await get_async_session()
+                await analyze_resume(
+                    message=message,
+                    resume_bytes=resume_bytes,
+                    vacancy_text=vacancy_text,
+                    file_format=resume_format,
+                    session=session,
+                )
 
     except zipfile.BadZipFile:
         await message.answer(
