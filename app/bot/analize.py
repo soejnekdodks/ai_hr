@@ -35,6 +35,12 @@ bot = Bot(config.TG_TOKEN)
 
 from aiogram.types import InputFile
 
+
+def wrap_media(bytesio, filename, **kwargs):
+    bytesio.seek(0)
+    return types.InputFile(bytesio, filename=filename, **kwargs)
+
+
 async def analyze_resume(
     message: Message,
     resume_bytes: bytes,
@@ -71,8 +77,6 @@ async def analyze_resume(
             alias_id=alias_id
         )
 
-        hr_chat_id = message.chat.id
-
         file_info = get_file_info(resume_bytes, file_format)
         caption = (
             "🎯 Новый кандидат прошел первичный отбор!\n\n"
@@ -80,17 +84,14 @@ async def analyze_resume(
             f"🔗 Ссылка на интервью: {config.DOMAIN}/api/v1/deeplink?id={alias_id}\n"
         )
 
-
-        # Создаем BytesIO объект для файла
         cv_file = BytesIO(resume_bytes)
-        cv_file.seek(0)  # Важно: перематываем на начало файла
         filename = f"resume_candidate_{candidate.id}{file_info['extension']}"
 
-        # Используем InputFile для передачи
-        input_file = types.InputFile(cv_file, filename=filename)
+        # Оборачиваем в InputFile с нужным именем файла
+        input_file = wrap_media(cv_file, filename)
 
-        media=types.InputFileDocument(input_file, filename=filename)
-        await bot.send_document(chat_id=hr_chat_id, document=media, caption=caption)
+        # Отправляем документ
+        await message.answer_document(input_file, caption=caption)
 
         await message.answer(
             f"✅ Резюме принято! Совпадение: {match_percentage:.1f}%. "
