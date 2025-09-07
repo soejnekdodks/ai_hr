@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message
+from loguru import logger
 
 from app.bot.analize import analyze_resume
 from app.database.core import get_async_session
@@ -162,7 +163,7 @@ async def handle_resume_zip(
                 resume_bytes = archive.read(resume_name)
                 resume_format = resume_name.split(".")[-1].lower()
 
-                await message.answer(f"резюме: {resume_bytes[:20]}\n\nвака: {vacancy_text[:20]}")
+                logger.info(f"резюме: {resume_bytes[:20]}\n\nвака: {vacancy_text[:20]}")
                 
                 await analyze_resume(
                     message=message,
