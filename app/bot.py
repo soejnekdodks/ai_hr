@@ -8,7 +8,7 @@ import pdfplumber
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import FSInputFile, Message
+from aiogram.types import Message
 
 # Создаем роутер для обработчиков
 router = Router()
