@@ -58,10 +58,13 @@ async def post_answers(
     questions = [q.question for q in interview.questions]
     answers = [answer.answer for answer in data.answers]
     logger.info(answers)
+    logger.info(f"Попытка отправки отчета в чат: {hr_chat_id}")
+    logger.info(f"Тип chat_id: {type(hr_chat_id)}")
+    logger.info(f"Данные кандидата: {candidate}")
 
     analyzer = AnswersAnalyzer()
     report = analyzer.analyze_answers(questions, answers)
-    await bot.send_message(hr_chat_id, report)
+    await bot.send_message(int(hr_chat_id), report)
 
     await query.questions.set_answers(
         session, [answer.model_dump() for answer in data.answers]
