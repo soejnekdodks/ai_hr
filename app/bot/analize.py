@@ -1,4 +1,5 @@
 import os
+import types
 import uuid
 import zipfile
 from datetime import timedelta
@@ -79,17 +80,17 @@ async def analyze_resume(
             f"🔗 Ссылка на интервью: {config.DOMAIN}/api/v1/deeplink?id={alias_id}\n"
         )
 
+
+        # Создаем BytesIO объект для файла
         cv_file = BytesIO(resume_bytes)
-        cv_file.seek(0)
+        cv_file.seek(0)  # Важно: перематываем на начало файла
         filename = f"resume_candidate_{candidate.id}{file_info['extension']}"
 
-        input_file = InputFile.from_buffer(cv_file, filename=filename)
+        # Используем InputFile для передачи
+        input_file = types.InputFile(cv_file, filename=filename)
 
-        await bot.send_document(
-            chat_id=hr_chat_id,
-            document=input_file,
-            caption=caption,
-        )
+        media=types.InputFileDocument(input_file, filename=filename)
+        await bot.send_document(chat_id=hr_chat_id, document=media, caption=caption)
 
         await message.answer(
             f"✅ Резюме принято! Совпадение: {match_percentage:.1f}%. "
