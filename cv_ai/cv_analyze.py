@@ -1,6 +1,7 @@
 import re
 
 from cv_ai.config import config
+from cv_ai.model_init import ModelManager
 from cv_ai.shrink import Shrinker
 import torch
 from transformers import (
@@ -14,35 +15,8 @@ from loguru import logger
 
 class ResumeVacancyAnalyze:
     def __init__(self):
-        self.model_name = config.BASE_MODEL
-
-        # bnb_config = BitsAndBytesConfig(
-        #     load_in_4bit=True,
-        #     bnb_4bit_compute_dtype=torch.bfloat16,  # можно заменить на torch.float16
-        #     bnb_4bit_use_double_quant=True,
-        #     bnb_4bit_quant_type="nf4"
-        # )
-
-        # quantization_config=bnb_config, # вместо torch_dtype
-
-        self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_name,
-            device_map="cpu",
-            torch_dtype=torch.bfloat16,
-            low_cpu_mem_usage=True,
-            trust_remote_code=True,
-        )
-
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.model_name, trust_remote_code=True
-        )
-
-        if self.tokenizer.pad_token is None:
-            self.tokenizer.pad_token = self.tokenizer.eos_token
-
-        self.pipe = pipeline(
-            "text-generation", model=self.model, tokenizer=self.tokenizer
-        )
+        self.model_manager = ModelManager()
+        self.model, self.tokenizer, self.pipe = self.model_manager.get_model()
 
     def _run_model(self, prompt: str, max_new_tokens: int = 10) -> str:
         try:
