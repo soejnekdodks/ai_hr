@@ -11,4 +11,3 @@ def pdf_to_text(pdf_path: str) -> str | None:
     except Exception as e:
         print(f"Ошибка при чтении файла: {e}")
         return None
-
