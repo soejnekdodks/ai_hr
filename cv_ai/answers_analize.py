@@ -25,9 +25,9 @@ class AnswersAnalyzer:
             outputs = self.pipe(
                 formatted_prompt,
                 max_new_tokens=max_new_tokens,
-                do_sample=True,
+                do_sample=False,
                 num_beams=1,
-                temperature=0.6,
+                temperature=0.0,
                 top_k=50,
                 top_p=0.95,
                 eos_token_id=self.tokenizer.eos_token_id,
@@ -61,6 +61,6 @@ class AnswersAnalyzer:
 
         full_prompt = f"{system_prompt}\n\n{user_prompt}"
 
-        raw_output = self._run_model(full_prompt, max_new_tokens=512)
+        raw_output = self._run_model(full_prompt, max_new_tokens=256)
 
         return {raw_output}

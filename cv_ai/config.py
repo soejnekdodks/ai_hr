@@ -10,7 +10,7 @@ class Config(BaseSettings):
     # Vikhrmodels/QVikhr-3-4B-Instruction
 
     BASE_MODEL: str = Field(
-        default="Vikhrmodels/Vikhr-Qwen-2.5-0.5b-Instruct", description="Базовая модель"
+        default="Vikhrmodels/Vikhr-Llama-3.2-1B-Instruct", description="Базовая модель"
     )
 
 config = Config()

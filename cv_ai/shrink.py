@@ -26,14 +26,14 @@ class Shrinker:
             outputs = self.pipe(
                 formatted_prompt,
                 max_new_tokens=max_new_tokens,
-                do_sample=True,
+                do_sample=False,
                 num_beams=1,
-                temperature=0.7,
+                temperature=0.0,
                 top_k=50,
                 top_p=0.95,
                 eos_token_id=self.tokenizer.eos_token_id,
             )
-
+            
             generated_text = outputs[0]["generated_text"][
                 len(formatted_prompt) :
             ].strip()
