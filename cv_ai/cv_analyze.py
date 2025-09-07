@@ -77,7 +77,7 @@ class ResumeVacancyAnalyze:
         
         shrink = Shrinker()
         resume_shrinked = shrink.resume_shrink(resume_text)
-        vacancy_srinked = shrink.vacancy_shrink(resume_text)
+        vacancy_srinked = shrink.vacancy_shrink(vacancy_text)
 
         user_prompt = (
             f"Оцени возможность кандидата пройти по данному резюме на работу по вакансии по шкале от 0 до 100, где 0 - полное несоответствие, 100 - идеальное соответствие.\n\n"

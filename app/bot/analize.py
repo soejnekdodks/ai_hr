@@ -41,7 +41,7 @@ async def analyze_resume(
     cv_analyze = ResumeVacancyAnalyze()
     resume_text = document_to_text(resume_bytes, file_format)
 
-    match_percentage = cv_analyze.analyze_resume_vs_vacancy(bot, resume_text, vacancy_text)
+    match_percentage = cv_analyze.analyze_resume_vs_vacancy(resume_text, vacancy_text)
 
     logger.info(f"резюме: {resume_text}\n\nвака: {vacancy_text}\n\nметч: {match_percentage}")
 
