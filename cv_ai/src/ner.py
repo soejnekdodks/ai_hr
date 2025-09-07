@@ -94,27 +94,6 @@ class NERModel:
             aggregation_strategy="simple",
         )
 
-        labels_hint = ", ".join(config.LABELS)
-        example = {
-            "SKILL": [],
-            "EDUCATION": [],
-            "EXPERIENCE": [],
-            "PERSON": [],
-            "LOCATION": [],
-            "SOFT_SKILL": [],
-        }
-
-        return (
-            f"{task}. Верните СТРОГО валидный JSON со структурами:\n"
-            f"{json.dumps(example, ensure_ascii=False)}\n"
-            f"Требования:\n"
-            f"— Только JSON, без комментариев и объяснений.\n"
-            f"— Каждый элемент списка должен быть коротким и атомарным.\n"
-            f"— Не придумывайте данные. Если раздел пуст, верните пустой список.\n"
-            f"— Допустимые ключи: {labels_hint}.\n"
-        )
-
-
 class ResumeParser:
     def __init__(self):
         # Загружаем базовую модель + LoRA
