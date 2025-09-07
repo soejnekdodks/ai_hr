@@ -77,7 +77,7 @@ async def analyze_resume(
         )
 
         file_info = get_file_info(resume_bytes, file_format)
-        caption = prepare_resume_caption(match_percentage, alias_id)
+        caption = prepare_resume_caption(match_percentage, alias_id, candidate_id=candidate.id)
 
         input_file = prepare_resume_file(resume_bytes, candidate, file_info)
 
@@ -93,10 +93,11 @@ async def analyze_resume(
         )
 
 
-def prepare_resume_caption(match_percentage: float, alias_id: uuid.UUID) -> str:
+def prepare_resume_caption(match_percentage: float, alias_id: uuid.UUID, candidate_id: int) -> str:
     """Prepares the caption for the resume document."""
     return (
         "🎯 Новый кандидат прошел первичный отбор!\n\n"
+        f"ID кандидата: {candidate_id}\n"
         f"⚡️ Совпадение с вакансией: {match_percentage:.1f}%\n"
         f"🔗 Ссылка на интервью: {config.DOMAIN}/api/v1/deeplink?id={alias_id}\n"
     )

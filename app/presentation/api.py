@@ -51,12 +51,13 @@ async def post_answers(
     
     await session.refresh(interview, attribute_names=["candidate"])
     candidate = interview.candidate
-    hr_chat_id = candidate.chat_id
+    hr_chat_id = candidate.chat.chat_id
     if not hr_chat_id:
         raise HTTPException(status_code=404, detail="HR chat_id not found")
 
     questions = [q.question for q in interview.questions]
     answers = [answer.answer for answer in data.answers]
+
     logger.info(answers)
     logger.info(f"Попытка отправки отчета в чат: {hr_chat_id}")
     logger.info(f"Тип chat_id: {type(hr_chat_id)}")
@@ -64,6 +65,10 @@ async def post_answers(
 
     analyzer = AnswersAnalyzer()
     report = analyzer.analyze_answers(questions, answers)
+    report = report + f"\nID кандидата: {candidate.id}"
+
+    logger.info(report)
+
     await bot.send_message(int(hr_chat_id), report)
 
     await query.questions.set_answers(
