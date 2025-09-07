@@ -1,4 +1,5 @@
 from cv_ai.config import config
+from cv_ai.shrink import Shrinker
 import torch
 from transformers import (
     AutoModelForCausalLM,
@@ -76,12 +77,16 @@ class QuestionsGenerator:
             "Ты — опытный HR-интервьюер. Никакого дополнительного текста и комментариев. Твоя задача — придумать конкретные и осмысленные вопросы для интервью, "
             "исходя из требований вакансии и опыта кандидата. Верни ТОЛЬКО вопросы."
         )
+        
+        shrink = Shrinker()
+        resume_shrinked = shrink.resume_shrink(resume_text)
+        vacancy_srinked = shrink.vacancy_shrink(resume_text)
 
         user_prompt = (
             f"Составь список из {num_questions} коротких вопросов для собеседования.\n"
             f"Основывайся на резюме и вакансии.\n\n"
-            f"ВАКАНСИЯ:\n{vacancy_text}\n\n"
-            f"РЕЗЮМЕ:\n{resume_text}\n\n"
+            f"ВАКАНСИЯ:\n{vacancy_srinked}\n\n"
+            f"РЕЗЮМЕ:\n{resume_shrinked}\n\n"
             f"Вопросы:"
         )
 

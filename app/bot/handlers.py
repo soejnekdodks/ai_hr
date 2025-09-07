@@ -162,8 +162,6 @@ async def handle_resume_zip(
             for resume_name in resume_files:
                 resume_bytes = archive.read(resume_name)
                 resume_format = resume_name.split(".")[-1].lower()
-
-                logger.info(f"резюме: {resume_bytes[:20]}\n\nвака: {vacancy_text[:20]}")
                 
                 await analyze_resume(
                     message=message,

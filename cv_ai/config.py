@@ -9,7 +9,7 @@ class Config(BaseSettings):
     # Vikhrmodels/Vikhr-Llama-3.2-1B-Instruct средняя
 
     BASE_MODEL: str = Field(
-        default="Vikhrmodels/Vikhr-Llama-3.2-1B-Instruct", description="Базовая модель"
+        default="Vikhrmodels/Vikhr-Qwen-2.5-0.5b-Instruct", description="Базовая модель"
     )
 
 config = Config()

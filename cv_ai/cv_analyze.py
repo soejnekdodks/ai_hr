@@ -1,6 +1,7 @@
 import re
 
 from cv_ai.config import config
+from cv_ai.shrink import Shrinker
 import torch
 from transformers import (
     AutoModelForCausalLM,
@@ -71,19 +72,18 @@ class ResumeVacancyAnalyze:
             logger.info(f"Ошибка при генерации текста: {e}")
             return ""
 
-    def analyze_resume_vs_vacancy(self, bot: Bot, resume_text: str, vacancy_text: str) -> float:
-        # system_prompt = "Ты - эксперт по подбору персонала. Никакого дополнительного текста. Выводи только число от 0 до 100"
-
-        # user_prompt = (
-        #     f"Оцени возможность кандидата пройти по данному резюме на работу по вакансии по шкале от 0 до 100, где 0 - полное несоответствие, 100 - идеальное соответствие.\n\n"
-        #     f"ВАКАНСИЯ:\n{vacancy_text}\n\n"
-        #     f"РЕЗЮМЕ:\n{resume_text}\n\n"
-        #     f"Оценка соответствия (только число):"
-        # )
-        system_prompt = "Ты - эксперт по фруктам"
+    def analyze_resume_vs_vacancy(self, resume_text: str, vacancy_text: str) -> float:
+        system_prompt = "Ты - эксперт по подбору персонала. Никакого дополнительного текста. Выводи только число от 0 до 100"
+        
+        shrink = Shrinker()
+        resume_shrinked = shrink.resume_shrink(resume_text)
+        vacancy_srinked = shrink.vacancy_shrink(resume_text)
 
         user_prompt = (
-            f"Чем яблоко отличается от груши?"
+            f"Оцени возможность кандидата пройти по данному резюме на работу по вакансии по шкале от 0 до 100, где 0 - полное несоответствие, 100 - идеальное соответствие.\n\n"
+            f"ВАКАНСИЯ:\n{vacancy_srinked}\n\n"
+            f"РЕЗЮМЕ:\n{resume_shrinked}\n\n"
+            f"Оценка соответствия (только число):"
         )
 
         full_prompt = f"{system_prompt}\n\n{user_prompt}"
