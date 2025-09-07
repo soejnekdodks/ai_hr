@@ -1,10 +1,10 @@
-from sentence_transformers import SentenceTransformer, util
-from sklearn.metrics import precision_score, recall_score, f1_score
-import numpy as np
-from typing import List, Dict, Tuple
+from typing import Dict, List, Tuple
 
-from ner import ResumeParser
+import numpy as np
 from config import config
+from ner import ResumeParser
+from sentence_transformers import SentenceTransformer, util
+from sklearn.metrics import f1_score, precision_score, recall_score
 
 
 def _pairwise_match(

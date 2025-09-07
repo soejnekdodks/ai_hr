@@ -1,8 +1,8 @@
 import re
-
-from src.config import config
-from api import cv_analize
 from pprint import pprint
+
+from api import cv_analize
+from src.config import config
 
 resume_text = """
 Иванов Иван Python разработчик с 5 летним опытом.

@@ -1,10 +1,11 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from peft import PeftModel
-import torch
 import json
 import re
 from typing import Dict, List
+
+import torch
 from config import config
+from peft import PeftModel
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 def _build_json_instruction(mode: str) -> str:

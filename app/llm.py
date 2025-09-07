@@ -1,10 +1,11 @@
-from app.config import config
-from fastapi import APIRouter, HTTPException
 import httpx
+from fastapi import APIRouter, HTTPException
 from loguru import logger
 
+from app.config import config
 
 router = APIRouter()
+
 
 async def make_request_to_llm(prompt: str) -> str:
     try:

@@ -1,13 +1,19 @@
-import os
-from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
-from transformers import AutoConfig
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from peft import PeftModel
-import torch
 import json
+import os
 import re
 from typing import Dict, List
+
+import torch
 from config import config
+from peft import PeftModel
+from transformers import (
+    AutoConfig,
+    AutoModelForCausalLM,
+    AutoModelForTokenClassification,
+    AutoTokenizer,
+    pipeline,
+)
+
 
 def _build_json_instruction(mode: str) -> str:
     if mode == "resume":
@@ -26,6 +32,7 @@ def _build_json_instruction(mode: str) -> str:
             "soft skills (SOFT_SKILL), локацию (LOCATION)."
         )
     return task
+
 
 class NERModel:
     def __init__(self, model_path=None):
@@ -91,9 +98,7 @@ class ResumeParser:
     def __init__(self):
         # Загружаем базовую модель + LoRA
         base = AutoModelForCausalLM.from_pretrained(
-            config.BASE_MODEL,
-            torch_dtype=torch.float16,
-            device_map="auto"
+            config.BASE_MODEL, torch_dtype=torch.float16, device_map="auto"
         )
         tokenizer = AutoTokenizer.from_pretrained(config.BASE_MODEL)
         self.model = PeftModel.from_pretrained(base, config.LORA_MODEL)
@@ -144,7 +149,7 @@ class ResumeParser:
             else:
                 result[k] = []
         return result
-        
+
     @staticmethod
     def _normalize(items: List[str]) -> List[str]:
         out = []
@@ -160,14 +165,11 @@ class ResumeParser:
                 uniq.append(x)
                 seen.add(x)
         return uniq
-        
+
     def _run_model(self, prompt: str) -> str:
         """Запускает модель и возвращает сырой текст (без постобработки)."""
         inputs = self.tokenizer(
-            prompt,
-            return_tensors="pt",
-            truncation=True,
-            max_length=2048
+            prompt, return_tensors="pt", truncation=True, max_length=2048
         ).to(self.model.device)
 
         with torch.no_grad():
@@ -180,8 +182,7 @@ class ResumeParser:
             )
 
         raw = self.tokenizer.decode(
-            out[0][inputs.input_ids.shape[-1]:],
-            skip_special_tokens=True
+            out[0][inputs.input_ids.shape[-1] :], skip_special_tokens=True
         )
         return raw
 

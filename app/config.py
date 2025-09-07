@@ -1,18 +1,13 @@
 from pydantic import Field
-from dotenv import load_dotenv
-from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
-load_dotenv()
-
 class Config(BaseSettings):
-    HOST_URL: str = Field(
-        description="URL по которому можно получить доступ к приложению",
-        default="http://localhost",
+    TG_TOKEN: str = Field(
+        description="Токен для тг бота",
+        default="8152863814:AAE_efaQn_0B3spZtcY2dIgEx3Mb07wiaoY",
     )
-
-    TG_TOKEN: str = Field(description="Токен для тг бота", default="")
+    OLLAMA_URL: str = Field(default="http://localhost:11434")
     MAX_FILE_SIZE_DOWNLOAD: int = Field(
         default=128 * 1024**2, description="Ограничение по загрузке в трекер в байтах"
     )
@@ -25,6 +20,8 @@ class Config(BaseSettings):
         description="URL для подключения к ollama", default="http://localhost:11434"
     )
     LLM: str = Field(description="Используемая llm", default="llama3")
+    API_PORT: int = Field(description="Порт сервера uvicorn")
+    DATABASE_URL: str = Field()
 
 
 config = Config()  # type: ignore

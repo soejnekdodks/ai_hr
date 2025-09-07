@@ -7,7 +7,7 @@ ENV PATH="$POETRY_HOME/bin:$PATH"
 ENV POETRY_VIRTUALENVS_IN_PROJECT=true
 
 RUN apt update && \
-  apt install -y curl && \
+  apt install -y curl gcc g++ && \
   curl -sSL https://install.python-poetry.org | python - && \
   poetry --version
 
@@ -18,17 +18,22 @@ FROM base AS development
 
 RUN poetry install --no-interaction --no-cache --no-root 
 
-COPY ./app ./app
-COPY ./cv_ai ./cv_ai
+COPY ./app /app/app
+COPY ./alembic.ini .
+COPY ./alembic /app/alembic
+COPY ./cv_ai /app/cv_ai
+COPY main.py .
 
-CMD ["poetry", "run", "python", "main.py"]
+CMD ["poetry", "run", "python", "/app/main.py"]
 
 
 FROM base AS production
 
 RUN poetry install --no-interaction --no-cache --no-root --only main
 
-COPY ./app ./app
-COPY ./cv_ai ./cv_ai
+COPY ./app /app/app
+COPY ./alembic.ini .
+COPY ./alembic /app/alembic
+COPY ./cv_ai /app/cv_ai
 
-CMD ["poetry", "run", "python", "main.py"]
+CMD ["poetry", "run", "python", "/app/main.py"]
