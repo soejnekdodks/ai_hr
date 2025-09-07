@@ -99,10 +99,21 @@ def prepare_resume_caption(match_percentage: float, alias_id: uuid.UUID) -> str:
 
 
 def prepare_resume_file(resume_bytes: bytes, candidate: Candidate, file_info: dict) -> InputFile:
-    """Prepares the resume file for sending."""
-    cv_file = BytesIO(resume_bytes)
+    """Prepares the resume file for sending by saving it to the filesystem."""
+    # Создаем директорию для сохранения файлов, если она не существует
+    save_dir = os.path.join(os.getcwd(), "resumes")  # Путь для сохранения резюме
+    os.makedirs(save_dir, exist_ok=True)
+    
+    # Генерируем имя файла
     filename = f"resume_candidate_{candidate.id}{file_info['extension']}"
-    return wrap_media(cv_file, filename)
+    file_path = os.path.join(save_dir, filename)
+    
+    # Сохраняем файл на диск
+    with open(file_path, 'wb') as file:
+        file.write(resume_bytes)
+    
+    # Возвращаем InputFile для отправки через Telegram
+    return InputFile(file_path, filename=filename)
 
 
 def get_file_info(file_bytes: bytes, original_format: str) -> dict:
