@@ -1,13 +1,14 @@
-from cv_ai.config import config
-from cv_ai.model_init import ModelManager
 import torch
+from loguru import logger
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     BitsAndBytesConfig,
     pipeline,
 )
-from loguru import logger
+
+from cv_ai.config import config
+from cv_ai.model_init import ModelManager
 
 
 class Shrinker:

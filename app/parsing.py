@@ -1,9 +1,11 @@
 import io
-from docx import Document
+
 import docx2txt
-from striprtf.striprtf import rtf_to_text
 import fitz
+from docx import Document
 from loguru import logger
+from striprtf.striprtf import rtf_to_text
+
 
 def txt_to_text(txt_bytes: bytes) -> str:
     try:

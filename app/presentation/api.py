@@ -1,16 +1,16 @@
 import os
 import uuid
 
-from cv_ai.answers_analize import AnswersAnalyzer
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.bot.start_bot import bot
 
+from app.bot.start_bot import bot
 from app.database import query
 from app.database.core import get_async_session
 from app.enums import InterviewState
 from app.presentation.models import AnswersRequest, Question, QuestionsResponse
+from cv_ai.answers_analize import AnswersAnalyzer
 
 router = APIRouter()
 

@@ -1,17 +1,19 @@
 import re
 
-from cv_ai.config import config
-from cv_ai.model_init import ModelManager
-from cv_ai.shrink import Shrinker
 import torch
+from aiogram import Bot
+from loguru import logger
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     BitsAndBytesConfig,
     pipeline,
 )
-from aiogram import Bot
-from loguru import logger
+
+from cv_ai.config import config
+from cv_ai.model_init import ModelManager
+from cv_ai.shrink import Shrinker
+
 
 class ResumeVacancyAnalyze:
     def __init__(self):

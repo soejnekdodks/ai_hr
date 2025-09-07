@@ -1,25 +1,24 @@
+import os
 import uuid
 import zipfile
-from io import BytesIO
 from datetime import timedelta
-import os
+from io import BytesIO
 
 from aiogram import Router
-from aiogram.types import Message, InputFile
-from cv_ai.shrink import Shrinker
-from sqlalchemy.ext.asyncio import AsyncSession
+from aiogram.types import InputFile, Message
 from fastapi import Depends
+from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import config
 from app.database.core import get_async_session
 from app.database.query.candidate import create as create_candidate
 from app.database.query.interview import create as create_interview
+from app.database.schema import Candidate
 from app.parsing import document_to_text
 from cv_ai.cv_analyze import ResumeVacancyAnalyze
 from cv_ai.questions_gen import QuestionsGenerator
-from app.database.schema import Candidate
-from loguru import logger
-
+from cv_ai.shrink import Shrinker
 
 # Максимальные значения для проверки архива
 MAX_ZIP_SIZE = 50 * 1024 * 1024  # 50MB
@@ -29,6 +28,7 @@ MAX_RESUME_SIZE = 10 * 1024 * 1024  # 10MB
 router = Router()
 
 from aiogram import Bot
+
 bot = Bot(config.TG_TOKEN)
 
 

@@ -1,11 +1,12 @@
 import zipfile
 from io import BytesIO
-from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message
+from fastapi import Depends
 from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.analize import analyze_resume
 from app.database.core import get_async_session
@@ -88,8 +89,7 @@ async def handle_vacancy_file(message: Message):
 
 @router.message(F.document & F.document.file_name.endswith(".zip"))
 async def handle_resume_zip(
-    message: Message,
-    session: AsyncSession = Depends(get_async_session),
+    message: Message
 ):
     user_id = message.from_user.id
     file_name = message.document.file_name
@@ -163,13 +163,14 @@ async def handle_resume_zip(
                 resume_bytes = archive.read(resume_name)
                 resume_format = resume_name.split(".")[-1].lower()
                 
-                await analyze_resume(
-                    message=message,
-                    resume_bytes=resume_bytes,
-                    vacancy_text=vacancy_text,
-                    file_format=resume_format,
-                    session=session,
-                )
+                async with get_async_session() as session:
+                    await analyze_resume(
+                        message=message,
+                        resume_bytes=resume_bytes,
+                        vacancy_text=vacancy_text,
+                        file_format=resume_format,
+                        session=session,
+                    )
 
     except zipfile.BadZipFile:
         await message.answer(

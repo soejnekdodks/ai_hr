@@ -3,9 +3,10 @@ import asyncio
 from aiogram import Bot, Dispatcher
 from loguru import logger
 
+from app.bot.analize import bot
 from app.bot.handlers import router
 from app.config import config
-from app.bot.analize import bot
+
 dp = Dispatcher()
 dp.include_router(router)
 

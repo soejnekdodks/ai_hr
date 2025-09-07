@@ -1,13 +1,15 @@
-from cv_ai.config import config
+import os
+
 import torch
+from loguru import logger
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     BitsAndBytesConfig,
     pipeline,
 )
-from loguru import logger
-import os
+
+from cv_ai.config import config
 
 
 class ModelManager:
