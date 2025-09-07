@@ -1,4 +1,6 @@
 import re
+
+from src.config import config
 from api import cv_analize
 from pprint import pprint
 
@@ -22,9 +24,8 @@ def clean_quotes(text: str) -> str:
     return text
 
 
-
-with open("C:\\Users\\user\source\\repos\\ai_hr\\ai_hr\cv_ai\src\dataset\вакансия.txt", "r", encoding="utf-8") as vaca:
-    with open("C:\\Users\\user\source\\repos\\ai_hr\\ai_hr\cv_ai\src\dataset\резюме.txt", "r", encoding="utf-8") as cv:
+with open(f"{config.PATH_TO_TEST_VACANCY}", "r", encoding="utf-8") as vaca:
+    with open(f"{config.PATH_TO_TEST_RESUME}", "r", encoding="utf-8") as cv:
         resume_text = clean_quotes(cv.read())
         vacancy_text = clean_quotes(vaca.read())
         pprint(cv_analize(resume_text, vacancy_text))
