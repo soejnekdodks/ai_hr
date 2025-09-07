@@ -3,6 +3,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import RedirectResponse
+from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.start_bot import bot
@@ -55,6 +56,7 @@ async def post_answers(
 
     questions = [q.question for q in interview.questions]
     answers = [answer.answer for answer in data.answers]
+    logger.info(answers)
 
     analyzer = AnswersAnalyzer()
     report = analyzer.analyze_answers(questions, answers)

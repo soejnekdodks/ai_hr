@@ -53,12 +53,19 @@ async def analyze_resume(
     if match_percentage >= 70.0:
         candidate: Candidate = await create_candidate(session=session, cv=resume_bytes)
 
-        qg = QuestionsGenerator()
-        questions = qg.generate_questions(
-            resume_text=resume_text,
-            vacancy_text=vacancy_text,
-            num_questions=config.NUMS_OF_QUESTIONS,
-        )
+        # qg = QuestionsGenerator()
+        # questions = qg.generate_questions(
+        #     resume_text=resume_text,
+        #     vacancy_text=vacancy_text,
+        #     num_questions=config.NUMS_OF_QUESTIONS,
+        # )
+        questions = [
+            "Что такое замыкание (closure) в JavaScript?",
+            "Как избежать Callback Hell?",
+            "Объясните принципы REST.",
+            "Что такое миграции базы данных и зачем они нужны?",
+            "Как вы обеспечиваете безопасность своего API?",
+        ]
 
         alias_id = uuid.uuid4()
 
@@ -90,7 +97,7 @@ async def analyze_resume(
 
         await bot.send_document(
             chat_id=hr_chat_id,
-            document=(filename, cv_file),  # Передаем как кортеж (filename, file_object)
+            document=cv_file,  # Передаем как кортеж (filename, file_object)
             caption=caption,
         )       
 
