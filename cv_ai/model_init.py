@@ -22,7 +22,7 @@ class ModelManager:
     def __init__(self):
         if not self._model_initialized:
             self.model_name = config.BASE_MODEL
-            self.cache_dir = config.MODEL_CACHE_DIR if hasattr(config, 'MODEL_CACHE_DIR') else "./model_cache"
+            self.cache_dir = "./model_cache"
             self.model = None
             self.tokenizer = None
             self.pipe = None
