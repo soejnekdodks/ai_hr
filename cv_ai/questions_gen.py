@@ -72,8 +72,8 @@ class QuestionsGenerator:
         self, resume_text: str, vacancy_text: str, num_questions: int = 8
     ) -> list:
         system_prompt = (
-            "Ты — опытный HR-интервьюер. Никакого дополнительного текста. Твоя задача — придумать конкретные и осмысленные вопросы для интервью, "
-            "исходя из требований вакансии и опыта кандидата. "
+            "Ты — опытный HR-интервьюер. Никакого дополнительного текста и комментариев. Твоя задача — придумать конкретные и осмысленные вопросы для интервью, "
+            "исходя из требований вакансии и опыта кандидата. Верни ТОЛЬКО вопросы."
         )
 
         user_prompt = (
@@ -86,7 +86,7 @@ class QuestionsGenerator:
 
         full_prompt = f"{system_prompt}\n\n{user_prompt}"
 
-        raw_output = self._run_model(full_prompt, max_new_tokens=256)
+        raw_output = self._run_model(full_prompt, max_new_tokens=512)
 
         # Разбиваем результат построчно и убираем пустые строки
         questions = [q.strip("- ") for q in raw_output.split("\n") if q.strip()]
