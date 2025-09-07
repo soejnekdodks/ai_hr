@@ -1,3 +1,4 @@
+from cv_ai.config import config
 import torch
 from transformers import (
     AutoModelForCausalLM,
@@ -9,7 +10,7 @@ from transformers import (
 
 class QuestionsGenerator:
     def __init__(self):
-        self.model_name = "Vikhrmodels/Vikhr-Qwen-2.5-0.5b-Instruct"
+        self.model_name = config.BASE_MODEL
 
         # bnb_config = BitsAndBytesConfig(
         #     load_in_4bit=True,
@@ -22,7 +23,7 @@ class QuestionsGenerator:
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            device_map="cpu",  # сам распределит по GPU/CPU
+            device_map="cpu",
             torch_dtype=torch.bfloat16,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
@@ -71,7 +72,7 @@ class QuestionsGenerator:
         self, resume_text: str, vacancy_text: str, num_questions: int = 8
     ) -> list:
         system_prompt = (
-            "Ты — опытный HR-интервьюер. Не пиши лишние комментарии. Твоя задача — придумать конкретные и осмысленные вопросы для интервью, "
+            "Ты — опытный HR-интервьюер. Никакого дополнительного текста. Твоя задача — придумать конкретные и осмысленные вопросы для интервью, "
             "исходя из требований вакансии и опыта кандидата. "
         )
 

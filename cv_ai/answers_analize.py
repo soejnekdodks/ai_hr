@@ -1,3 +1,4 @@
+from cv_ai.config import config
 import torch
 from transformers import (
     AutoModelForCausalLM,
@@ -9,7 +10,7 @@ from transformers import (
 
 class AnswersAnalyzer:
     def __init__(self):
-        self.model_name = "Vikhrmodels/Vikhr-Qwen-2.5-0.5b-Instruct"
+        self.model_name = config.BASE_MODEL
 
         # bnb_config = BitsAndBytesConfig(
         #     load_in_4bit=True,
@@ -22,7 +23,7 @@ class AnswersAnalyzer:
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            device_map="cpu",  # сам распределит по GPU/CPU
+            device_map="cpu",
             torch_dtype=torch.bfloat16,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
