@@ -32,6 +32,24 @@ def wrap_media(bytesio, filename, **kwargs):
     return InputFile(bytesio, filename=filename, **kwargs)
 
 
+def prepare_resume_file(resume_bytes: bytes, candidate: Candidate, file_info: dict) -> str:
+    """Prepares the resume file for sending by saving it to the filesystem."""
+    # Создаем директорию для сохранения файлов, если она не существует
+    save_dir = os.path.join(os.getcwd(), "resumes")  # Путь для сохранения резюме
+    os.makedirs(save_dir, exist_ok=True)
+    
+    # Генерируем имя файла
+    filename = f"resume_candidate_{candidate.id}{file_info['extension']}"
+    file_path = os.path.join(save_dir, filename)
+    
+    # Сохраняем файл на диск
+    with open(file_path, 'wb') as file:
+        file.write(resume_bytes)
+    
+    # Возвращаем путь к файлу для использования в отправке через Telegram
+    return file_path
+
+
 async def analyze_resume(
     message: types.Message,
     resume_bytes: bytes,
@@ -63,9 +81,11 @@ async def analyze_resume(
         file_info = get_file_info(resume_bytes, file_format)
         caption = prepare_resume_caption(match_percentage, alias_id)
 
-        input_file = prepare_resume_file(resume_bytes, candidate, file_info)
+        # Сохраняем файл на диск и получаем путь
+        file_path = prepare_resume_file(resume_bytes, candidate, file_info)
 
-        await message.answer_document(input_file, caption=caption)
+        # Отправляем файл через Telegram, используя путь
+        await message.answer_document(file_path, caption=caption)
 
         # Step 5: Confirm to the user
         await message.answer(
@@ -76,7 +96,6 @@ async def analyze_resume(
             f"❌ Резюме {file_format.upper()} не прошло отбор "
             f"(совпадение {match_percentage:.1f}%)."
         )
-
 
 def generate_interview_questions() -> list:
     """Generates a set of questions for the interview."""
@@ -96,24 +115,6 @@ def prepare_resume_caption(match_percentage: float, alias_id: uuid.UUID) -> str:
         f"⚡️ Совпадение с вакансией: {match_percentage:.1f}%\n"
         f"🔗 Ссылка на интервью: {config.DOMAIN}/api/v1/deeplink?id={alias_id}\n"
     )
-
-
-def prepare_resume_file(resume_bytes: bytes, candidate: Candidate, file_info: dict) -> InputFile:
-    """Prepares the resume file for sending by saving it to the filesystem."""
-    # Создаем директорию для сохранения файлов, если она не существует
-    save_dir = os.path.join(os.getcwd(), "resumes")  # Путь для сохранения резюме
-    os.makedirs(save_dir, exist_ok=True)
-    
-    # Генерируем имя файла
-    filename = f"resume_candidate_{candidate.id}{file_info['extension']}"
-    file_path = os.path.join(save_dir, filename)
-    
-    # Сохраняем файл на диск
-    with open(file_path, 'wb') as file:
-        file.write(resume_bytes)
-    
-    # Возвращаем InputFile для отправки через Telegram
-    return InputFile(file_path, filename=filename)
 
 
 def get_file_info(file_bytes: bytes, original_format: str) -> dict:
