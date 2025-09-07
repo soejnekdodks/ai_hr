@@ -79,11 +79,11 @@ async def analyze_resume(
             f"🔗 Ссылка на интервью: {config.DOMAIN}/api/v1/deeplink?id={alias_id}\n"
         )
 
-        # ✅ Создаём InputFile
         cv_file = BytesIO(resume_bytes)
         cv_file.seek(0)
         filename = f"resume_candidate_{candidate.id}{file_info['extension']}"
-        input_file = InputFile(cv_file, filename=filename)
+
+        input_file = InputFile.from_buffer(cv_file, filename=filename)
 
         await bot.send_document(
             chat_id=hr_chat_id,
