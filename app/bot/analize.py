@@ -32,7 +32,7 @@ def wrap_media(bytesio, filename, **kwargs):
     return InputFile(bytesio, filename=filename, **kwargs)
 
 
-def prepare_resume_file(resume_bytes: bytes, candidate: Candidate, file_info: dict) -> str:
+def prepare_resume_file(resume_bytes: bytes, candidate: Candidate, file_info: dict) -> InputFile:
     """Prepares the resume file for sending by saving it to the filesystem."""
     # Создаем директорию для сохранения файлов, если она не существует
     save_dir = os.path.join(os.getcwd(), "resumes")  # Путь для сохранения резюме
@@ -46,8 +46,8 @@ def prepare_resume_file(resume_bytes: bytes, candidate: Candidate, file_info: di
     with open(file_path, 'wb') as file:
         file.write(resume_bytes)
     
-    # Возвращаем путь к файлу для использования в отправке через Telegram
-    return file_path
+    # Возвращаем путь в InputFile для отправки через Telegram
+    return InputFile(file_path, filename=filename)
 
 
 async def analyze_resume(
