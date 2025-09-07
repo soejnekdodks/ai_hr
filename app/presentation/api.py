@@ -50,6 +50,7 @@ async def post_answers(
         )
     
     await session.refresh(interview, attribute_names=["candidate"])
+    await session.refresh(interview.candidate, attribute_names=["chat"])
     candidate = interview.candidate
     hr_chat_id = candidate.chat.chat_id
     if not hr_chat_id:
