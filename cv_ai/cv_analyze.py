@@ -74,15 +74,11 @@ class ResumeVacancyAnalyze:
 
     def analyze_resume_vs_vacancy(self, resume_text: str, vacancy_text: str) -> float:
         system_prompt = "Ты - эксперт по подбору персонала. Никакого дополнительного текста. Выводи только число от 0 до 100"
-        
-        shrink = Shrinker()
-        resume_shrinked = shrink.resume_shrink(resume_text)
-        vacancy_srinked = shrink.vacancy_shrink(vacancy_text)
 
         user_prompt = (
             f"Оцени возможность кандидата пройти по данному резюме на работу по вакансии по шкале от 0 до 100, где 0 - полное несоответствие, 100 - идеальное соответствие.\n\n"
-            f"ВАКАНСИЯ:\n{vacancy_srinked}\n\n"
-            f"РЕЗЮМЕ:\n{resume_shrinked}\n\n"
+            f"ВАКАНСИЯ:\n{vacancy_text}\n\n"
+            f"РЕЗЮМЕ:\n{resume_text}\n\n"
             f"Оценка соответствия (только число):"
         )
 

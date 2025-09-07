@@ -6,6 +6,7 @@ import os
 
 from aiogram import Router
 from aiogram.types import Message, InputFile
+from cv_ai.shrink import Shrinker
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 
@@ -39,8 +40,12 @@ async def analyze_resume(
     session: AsyncSession,
 ):
     cv_analyze = ResumeVacancyAnalyze()
-    resume_text = document_to_text(resume_bytes, file_format)
+    resume_text_from_bytes = document_to_text(resume_bytes, file_format)
 
+    shrink = Shrinker()
+    resume_text = shrink.resume_shrink(resume_text_from_bytes)
+    vacancy_text = shrink.vacancy_shrink(vacancy_text)
+        
     match_percentage = cv_analyze.analyze_resume_vs_vacancy(resume_text, vacancy_text)
 
     logger.info(f"резюме: {resume_text}\n\nвака: {vacancy_text}\n\nметч: {match_percentage}")

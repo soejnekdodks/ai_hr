@@ -78,15 +78,11 @@ class QuestionsGenerator:
             "исходя из требований вакансии и опыта кандидата. Верни ТОЛЬКО вопросы."
         )
         
-        shrink = Shrinker()
-        resume_shrinked = shrink.resume_shrink(resume_text)
-        vacancy_srinked = shrink.vacancy_shrink(vacancy_text)
-        
         user_prompt = (
             f"Составь список из {num_questions} коротких вопросов для собеседования.\n"
             f"Основывайся на резюме и вакансии.\n\n"
-            f"ВАКАНСИЯ:\n{vacancy_srinked}\n\n"
-            f"РЕЗЮМЕ:\n{resume_shrinked}\n\n"
+            f"ВАКАНСИЯ:\n{vacancy_text}\n\n"
+            f"РЕЗЮМЕ:\n{resume_text}\n\n"
             f"Вопросы:"
         )
 
