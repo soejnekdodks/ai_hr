@@ -41,5 +41,10 @@ async_session = async_sessionmaker(
 
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session() as session, session.begin():
-        yield session
+    try:
+        async with async_session() as session, session.begin():
+            yield session
+    except:
+        await session.rollback()
+        raise
+

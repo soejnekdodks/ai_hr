@@ -48,7 +48,8 @@ async def post_answers(
         raise HTTPException(
             status_code=406, detail="Interview saving does not acceptable"
         )
-
+    
+    await session.refresh(interview, attribute_names=["candidate"])
     candidate = interview.candidate
     hr_chat_id = candidate.chat_id
     if not hr_chat_id:
