@@ -48,28 +48,23 @@ async def post_answers(
             status_code=406, detail="Interview saving does not acceptable"
         )
 
-    # Получаем chat_id HR-у, который связан с интервью
     candidate = interview.candidate
     hr_chat_id = candidate.chat_id
     if not hr_chat_id:
         raise HTTPException(status_code=404, detail="HR chat_id not found")
 
-    # Анализируем ответы кандидата
     questions = [q.question for q in interview.questions]
     answers = [answer.answer for answer in data.answers]
 
     analyzer = AnswersAnalyzer()
     report = analyzer.analyze_answers(questions, answers)
 
-    # Отправляем отчет HR-у
     await bot.send_message(hr_chat_id, report)
 
-    # Сохраняем ответы кандидата в базе данных
     await query.questions.set_answers(
         session, [answer.model_dump() for answer in data.answers]
     )
 
-    # Закрываем интервью
     await query.interview.mark_as_finished(session, interview.id)
 
     return Response(status_code=201)

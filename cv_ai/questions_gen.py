@@ -6,6 +6,7 @@ from transformers import (
     BitsAndBytesConfig,
     pipeline,
 )
+from loguru import logger
 
 
 class QuestionsGenerator:
@@ -65,7 +66,7 @@ class QuestionsGenerator:
             return generated_text
 
         except Exception as e:
-            print(f"Ошибка при генерации текста: {e}")
+            logger.info(f"Ошибка при генерации текста: {e}")
             return ""
 
     def generate_questions(

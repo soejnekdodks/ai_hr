@@ -12,7 +12,6 @@ from app.parsing import document_to_text
 
 router = Router()
 
-# Константы ограничений
 MAX_VACANCY_SIZE = 5 * 1024 * 1024  # 5MB
 MAX_ZIP_SIZE = 10 * 1024 * 1024  # 10MB
 MAX_RESUME_SIZE = 2 * 1024 * 1024  # 2MB
@@ -53,7 +52,6 @@ async def handle_vacancy_file(message: Message):
         )
         return
 
-    # Скачиваем файл
     try:
         file = await message.bot.get_file(message.document.file_id)
         downloaded = await message.bot.download_file(file.file_path)
@@ -115,7 +113,6 @@ async def handle_resume_zip(
         )
         return
 
-    # Скачиваем и проверяем архив
     try:
         file = await message.bot.get_file(message.document.file_id)
         downloaded = await message.bot.download_file(file.file_path)
@@ -137,7 +134,6 @@ async def handle_resume_zip(
                 )
                 return
 
-            # Проверяем размер каждого файла
             oversized_files = []
             for resume_name in resume_files:
                 file_info = archive.getinfo(resume_name)
@@ -168,7 +164,6 @@ async def handle_resume_zip(
 
                 await message.answer(f"резюме: {resume_bytes[:20]}\n\nвака: {vacancy_text[:20]}")
                 
-                # Анализируем резюме
                 await analyze_resume(
                     message=message,
                     resume_bytes=resume_bytes,

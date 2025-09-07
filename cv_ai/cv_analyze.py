@@ -8,7 +8,8 @@ from transformers import (
     BitsAndBytesConfig,
     pipeline,
 )
-
+from aiogram import Bot
+from loguru import logger
 
 class ResumeVacancyAnalyze:
     def __init__(self):
@@ -67,10 +68,10 @@ class ResumeVacancyAnalyze:
             return generated_text
 
         except Exception as e:
-            print(f"Ошибка при генерации текста: {e}")
+            logger.info(f"Ошибка при генерации текста: {e}")
             return ""
 
-    def analyze_resume_vs_vacancy(self, resume_text: str, vacancy_text: str) -> float:
+    def analyze_resume_vs_vacancy(self, bot: Bot, resume_text: str, vacancy_text: str) -> float:
         system_prompt = "Ты - эксперт по подбору персонала. Никакого дополнительного текста. Выводи только число от 0 до 100"
 
         user_prompt = (
@@ -82,19 +83,15 @@ class ResumeVacancyAnalyze:
 
         full_prompt = f"{system_prompt}\n\n{user_prompt}"
 
-        try:
-            raw_output = self._run_model(full_prompt, max_new_tokens=10)
-            print(f"Модель ответила: '{raw_output}'")
-
-            # Ищем число в ответе
-            match = re.search(r"(\d{1,3})", raw_output)
-            if match:
-                num = float(match.group(1))
-                return max(0.0, min(100.0, num))
-            else:
-                print(f"Не удалось извлечь число из ответа: '{raw_output}'")
-                return -1
-
-        except Exception as e:
-            print(f"Ошибка при анализе соответствия: {e}")
+        raw_output = self._run_model(full_prompt, max_new_tokens=10)
+        logger.info(f"Модель ответила: '{raw_output}'")
+        
+        # Ищем число в ответе
+        match = re.search(r"(\d{1,3})", raw_output)
+        if match:
+            num = float(match.group(1))
+            return max(0.0, min(100.0, num))
+        else:
+            logger.info(f"Не удалось извлечь число из ответа: '{raw_output}'")
             return -1
+

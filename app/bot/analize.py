@@ -42,7 +42,7 @@ async def analyze_resume(
 
     match_percentage = cv_analyze.analyze_resume_vs_vacancy(resume_text, vacancy_text)
 
-    await bot.send_message(message.chat.id, f"резюме: {resume_text}\n\nвака: {vacancy_text}\n\nметч: {match_percentage}")
+    await bot.send_message(message.chat.id, "резюме: {resume_text}\n\nвака: {vacancy_text}\n\nметч: {match_percentage}")
 
     if match_percentage > 70.0:
         candidate: Candidate = await create_candidate(session=session, cv=resume_bytes)

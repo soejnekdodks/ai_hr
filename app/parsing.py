@@ -3,11 +3,10 @@ from docx import Document
 import docx2txt
 from striprtf.striprtf import rtf_to_text
 import fitz
-
+from loguru import logger
 
 def txt_to_text(txt_bytes: bytes) -> str:
     try:
-        # Пытаемся декодировать с разными кодировками
         encodings = ['utf-8', 'windows-1251', 'cp866', 'iso-8859-1', 'utf-16']
         
         for encoding in encodings:
@@ -17,11 +16,10 @@ def txt_to_text(txt_bytes: bytes) -> str:
             except UnicodeDecodeError:
                 continue
         
-        # Если ни одна кодировка не подошла, пробуем с игнорированием ошибок
         return txt_bytes.decode('utf-8', errors='ignore')
         
     except Exception as e:
-        print(f"Ошибка при чтении TXT: {e}")
+        logger.info(f"Ошибка при чтении TXT: {e}")
         return ""
 
 
@@ -33,7 +31,7 @@ def pdf_to_text(pdf_bytes: bytes) -> str:
                 text += page.get_text() + "\n"
         return text
     except Exception as e:
-        print(f"Ошибка при чтении PDF: {e}")
+        logger.info(f"Ошибка при чтении PDF: {e}")
         return ""
 
 
@@ -55,13 +53,12 @@ def docx_to_text(docx_bytes: bytes) -> str:
         
         return "\n".join(text)
     except Exception as e:
-        print(f"Ошибка при чтении DOCX: {e}")
+        logger.info(f"Ошибка при чтении DOCX: {e}")
         return ""
 
 
 def rtf_to_text_bytes(rtf_bytes: bytes) -> str:
     try:
-        # Декодируем байты в строку (RTF обычно в кодировке Windows-1252 или cp866)
         try:
             rtf_content = rtf_bytes.decode('windows-1252')
         except UnicodeDecodeError:
@@ -73,7 +70,7 @@ def rtf_to_text_bytes(rtf_bytes: bytes) -> str:
         text = rtf_to_text(rtf_content)
         return text
     except Exception as e:
-        print(f"Ошибка при чтении RTF: {e}")
+        logger.info(f"Ошибка при чтении RTF: {e}")
         return ""
 
 
@@ -94,9 +91,9 @@ def document_to_text(file_bytes: bytes, file_extension: str) -> str:
             return txt_to_text(file_bytes)
         
         else:
-            print(f"Неподдерживаемый формат: {file_extension}")
+            logger.info(f"Неподдерживаемый формат: {file_extension}")
             return ""
             
     except Exception as e:
-        print(f"Ошибка при обработке {file_extension}: {e}")
+        logger.info(f"Ошибка при обработке {file_extension}: {e}")
         return ""

@@ -6,7 +6,7 @@ from transformers import (
     BitsAndBytesConfig,
     pipeline,
 )
-
+from loguru import logger
 
 class AnswersAnalyzer:
     def __init__(self):
@@ -65,7 +65,7 @@ class AnswersAnalyzer:
             return generated_text
 
         except Exception as e:
-            print(f"Ошибка при генерации текста: {e}")
+            logger.info(f"Ошибка при генерации текста: {e}")
             return ""
 
     def analyze_answers(self, questions: list, answers: list) -> dict:
