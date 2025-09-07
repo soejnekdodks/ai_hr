@@ -26,21 +26,17 @@ router = Router()
 bot = Bot(config.TG_TOKEN)
 
 def wrap_media(bytesio, filename, **kwargs):
-    """Wraps a BytesIO object into BufferedInputFile and rewinds to the beginning"""
-    bytesio.seek(0)  # Ensure file pointer is at the beginning
-    # Используем BufferedInputFile для работы с данными в памяти
+    bytesio.seek(0)
     return BufferedInputFile(
-        file=bytesio.getvalue(),  # Получаем байты из BytesIO
+        file=bytesio.getvalue(),  
         filename=filename,
         **kwargs
     )
 
 def prepare_resume_file(resume_bytes: bytes, candidate: Candidate, file_info: dict) -> BufferedInputFile:
-    """Prepares the resume file for sending using in-memory buffer."""
-    # Генерируем имя файла
+
     filename = f"resume_candidate_{candidate.id}{file_info['extension']}"
     
-    # Создаем файл в памяти используя BufferedInputFile
     return BufferedInputFile(
         file=resume_bytes,
         filename=filename
@@ -53,18 +49,25 @@ async def analyze_resume(
     file_format: str,
     session: AsyncSession,
 ):
-    """Analyzes resume, compares it to vacancy, and sends the resume with the result."""
-    match_percentage = 100  # For the sake of simplicity, we're using a dummy value.
+    shrinker = Shrinker()
+
+    resume = document_to_text(resume_bytes, file_format)
+
+    resume = shrinker.resume_shrink(resume)
+    vacancy_text = shrinker.vacancy_shrink(vacancy_text)
+
+    cv_analyze = ResumeVacancyAnalyze()
+
+    match_percentage = cv_analyze.analyze_resume_vs_vacancy(resume, vacancy_text)
 
     if match_percentage >= 70.0:
-        # Step 1: Create candidate in the database
         candidate = await create_candidate(session=session, cv=resume_bytes)
 
-        # Step 2: Generate interview questions
-        questions = generate_interview_questions()
+        qg = QuestionsGenerator()
+        questions = qg.generate_questions(vacancy_text, resume, config.NUMS_OF_QUESTIONS)
 
-        # Step 3: Create interview record
         alias_id = uuid.uuid4()
+
         await create_interview(
             session=session,
             candidate_id=candidate.id,
@@ -73,17 +76,13 @@ async def analyze_resume(
             alias_id=alias_id
         )
 
-        # Step 4: Prepare file and send document to HR
         file_info = get_file_info(resume_bytes, file_format)
         caption = prepare_resume_caption(match_percentage, alias_id)
 
-        # Создаем файл в памяти
         input_file = prepare_resume_file(resume_bytes, candidate, file_info)
 
-        # Отправляем файл через Telegram
         await message.answer_document(input_file, caption=caption)
 
-        # Step 5: Confirm to the user
         await message.answer(
             f"✅ Резюме принято! Совпадение: {match_percentage:.1f}%. HR получил уведомление."
         )
@@ -92,16 +91,6 @@ async def analyze_resume(
             f"❌ Резюме {file_format.upper()} не прошло отбор "
             f"(совпадение {match_percentage:.1f}%)."
         )
-
-def generate_interview_questions() -> list:
-    """Generates a set of questions for the interview."""
-    return [
-        "Что такое замыкание (closure) в JavaScript?",
-        "Как избежать Callback Hell?",
-        "Объясните принципы REST.",
-        "Что такое миграции базы данных и зачем они нужны?",
-        "Как вы обеспечиваете безопасность своего API?",
-    ]
 
 
 def prepare_resume_caption(match_percentage: float, alias_id: uuid.UUID) -> str:
