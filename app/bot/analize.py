@@ -32,6 +32,8 @@ from aiogram import Bot
 
 bot = Bot(config.TG_TOKEN)
 
+from aiogram.types import InputFile
+
 async def analyze_resume(
     message: Message,
     resume_bytes: bytes,
@@ -45,20 +47,11 @@ async def analyze_resume(
     shrink = Shrinker()
     resume_text = shrink.resume_shrink(resume_text_from_bytes)
     vacancy_text = shrink.vacancy_shrink(vacancy_text)
-        
-    # match_percentage = cv_analyze.analyze_resume_vs_vacancy(resume_text, vacancy_text)
 
-    # logger.info(f"резюме: {resume_text}\n\nвака: {vacancy_text}\n\nметч: {match_percentage}")
     match_percentage = 100
     if match_percentage >= 70.0:
         candidate: Candidate = await create_candidate(session=session, cv=resume_bytes)
 
-        # qg = QuestionsGenerator()
-        # questions = qg.generate_questions(
-        #     resume_text=resume_text,
-        #     vacancy_text=vacancy_text,
-        #     num_questions=config.NUMS_OF_QUESTIONS,
-        # )
         questions = [
             "Что такое замыкание (closure) в JavaScript?",
             "Как избежать Callback Hell?",
@@ -78,7 +71,7 @@ async def analyze_resume(
         )
 
         hr_chat_id = message.chat.id
-       
+
         file_info = get_file_info(resume_bytes, file_format)
         caption = (
             "🎯 Новый кандидат прошел первичный отбор!\n\n"
@@ -86,20 +79,17 @@ async def analyze_resume(
             f"🔗 Ссылка на интервью: {config.DOMAIN}/api/v1/deeplink?id={alias_id}\n"
         )
 
-        # Создаем BytesIO из байтов и устанавливаем позицию на начало
-        cv_file = BytesIO(resume_bytes)
-        cv_file.seek(0)  # Важно: перематываем на начало файла
-        filename = f"resume_candidate_{candidate.id}{file_info['extension']}"
-
+        # ✅ Создаём InputFile
         cv_file = BytesIO(resume_bytes)
         cv_file.seek(0)
         filename = f"resume_candidate_{candidate.id}{file_info['extension']}"
+        input_file = InputFile(cv_file, filename=filename)
 
         await bot.send_document(
             chat_id=hr_chat_id,
-            document=cv_file,  # Передаем как кортеж (filename, file_object)
+            document=input_file,
             caption=caption,
-        )       
+        )
 
         await message.answer(
             f"✅ Резюме принято! Совпадение: {match_percentage:.1f}%. "
