@@ -3,7 +3,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score
 import numpy as np
 from typing import List, Dict, Tuple
 
-from ner2 import ResumeParser
+from ner import ResumeParser
 from config import config
 
 
