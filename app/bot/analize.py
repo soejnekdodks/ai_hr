@@ -1,5 +1,5 @@
 import os
-import types
+from aiogram import types
 import uuid
 import zipfile
 from datetime import timedelta
