@@ -44,7 +44,7 @@ class AnswersAnalyzer:
             logger.info(f"Ошибка при генерации текста: {e}")
             return ""
 
-    def analyze_answers(self, questions: list, answers: list) -> dict:
+    def analyze_answers(self, questions: list, answers: list) -> str:
         qa_text = "\n".join(
             [f"Вопрос: {q}\nОтвет: {a}" for q, a in zip(questions, answers)]
         )
@@ -65,4 +65,4 @@ class AnswersAnalyzer:
 
         raw_output = self._run_model(full_prompt, max_new_tokens=256)
 
-        return {raw_output}
+        return raw_output

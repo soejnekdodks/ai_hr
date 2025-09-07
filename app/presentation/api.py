@@ -61,7 +61,6 @@ async def post_answers(
 
     analyzer = AnswersAnalyzer()
     report = analyzer.analyze_answers(questions, answers)
-
     await bot.send_message(hr_chat_id, report)
 
     await query.questions.set_answers(
