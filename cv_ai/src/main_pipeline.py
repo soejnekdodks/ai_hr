@@ -7,13 +7,19 @@ from ner import ResumeParser
 from config import config
 
 
-def _pairwise_match(resume_items: List[str], vacancy_items: List[str], embedder) -> Tuple[List[Tuple[str, str, float]], np.ndarray]:
+def _pairwise_match(
+    resume_items: List[str], vacancy_items: List[str], embedder
+) -> Tuple[List[Tuple[str, str, float]], np.ndarray]:
     """Сопоставляет элементы по эмбеддингам, возвращает лучшие пары и матрицу сходства."""
     if not resume_items or not vacancy_items:
         return [], np.zeros((len(vacancy_items), len(resume_items)))
 
-    emb_r = embedder.encode(resume_items, convert_to_tensor=True, normalize_embeddings=True)
-    emb_v = embedder.encode(vacancy_items, convert_to_tensor=True, normalize_embeddings=True)
+    emb_r = embedder.encode(
+        resume_items, convert_to_tensor=True, normalize_embeddings=True
+    )
+    emb_v = embedder.encode(
+        vacancy_items, convert_to_tensor=True, normalize_embeddings=True
+    )
 
     sim = util.cos_sim(emb_v, emb_r).cpu().numpy()  # [V, R]
     pairs = []

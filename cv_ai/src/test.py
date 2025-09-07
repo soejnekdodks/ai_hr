@@ -18,9 +18,10 @@ vacancy_text = """
 
 # pprint(cv_analize(resume_text, vacancy_text))
 
+
 def clean_quotes(text: str) -> str:
     # заменяем "..." внутри русских слов на «...»
-    text = re.sub(r'\"([А-Яа-яA-Za-z0-9\s\-]+)\"', r'«\1»', text)
+    text = re.sub(r"\"([А-Яа-яA-Za-z0-9\s\-]+)\"", r"«\1»", text)
     return text
 
 
