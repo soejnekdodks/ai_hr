@@ -11,6 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.bot.analize import analyze_resume
 from app.database.core import get_async_session
 from app.parsing import document_to_text
+from app.database.core import async_session
+
 
 router = Router()
 
@@ -163,7 +165,7 @@ async def handle_resume_zip(
                 resume_bytes = archive.read(resume_name)
                 resume_format = resume_name.split(".")[-1].lower()
                 
-                async for session in get_async_session():
+                async with async_session() as session:
                     await analyze_resume(
                         message=message,
                         resume_bytes=resume_bytes,
