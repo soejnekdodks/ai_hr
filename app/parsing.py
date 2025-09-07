@@ -1,6 +1,5 @@
 import io
 
-import docx2txt
 import fitz
 from docx import Document
 from loguru import logger
