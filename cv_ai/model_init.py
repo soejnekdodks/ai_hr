@@ -5,7 +5,6 @@ from loguru import logger
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
-    BitsAndBytesConfig,
     pipeline,
 )
 
@@ -36,32 +35,32 @@ class ModelManager:
         if self.model is not None:
             return self.model, self.tokenizer, self.pipe
 
-        logger.info(f"Загрузка модели {self.model_name} с 4-бит квантованием...")
-
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.bfloat16,
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_quant_type="nf4",
-        )
+        logger.info(f"Загрузка модели {self.model_name} без 4-бит квантизации...")
 
         try:
+            # Выбираем dtype в зависимости от доступности GPU
+            torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+
             self.model = AutoModelForCausalLM.from_pretrained(
                 self.model_name,
-                device_map="auto",
-                torch_dtype=torch.bfloat16,
+                device_map="auto" if torch.cuda.is_available() else None,
+                torch_dtype=torch_dtype,
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
                 cache_dir=self.cache_dir,
-                quantization_config=bnb_config,
             )
-            self.model = torch.compile(self.model)  # 🔥 Оптимизация PyTorch 2.0+
+
+            # Оптимизация PyTorch 2.0+ (если доступно)
+            try:
+                self.model = torch.compile(self.model)
+            except Exception as compile_err:
+                logger.warning(f"torch.compile не поддерживается: {compile_err}")
 
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.model_name,
                 trust_remote_code=True,
                 cache_dir=self.cache_dir,
-                use_fast=True,  # 🔥 быстрее
+                use_fast=True,
             )
 
             if self.tokenizer.pad_token is None:
@@ -71,10 +70,10 @@ class ModelManager:
                 "text-generation",
                 model=self.model,
                 tokenizer=self.tokenizer,
-                device_map="auto",
+                device_map="auto" if torch.cuda.is_available() else None,
             )
 
-            logger.info("Модель загружена, скомпилирована и готова к работе.")
+            logger.info("Модель загружена и готова к работе (FP16/FP32).")
         except Exception as e:
             logger.error(f"Ошибка при загрузке модели: {e}")
             raise
