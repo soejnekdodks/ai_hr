@@ -1,26 +1,25 @@
+import httpx
 from config import config
 from fastapi import APIRouter, HTTPException
-import httpx
 from logury import logger
 
 router = APIRouter()
+
 
 async def make_request_to_llm(prompt: str) -> str:
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{config.OLLAMA_URL}/api/generate",
-                json={
-                    "model": config.LLM,
-                    "prompt": prompt,
-                    "stream": False
-                }
+                json={"model": config.LLM, "prompt": prompt, "stream": False},
             )
             response.raise_for_status()
             llm_output = response.json()["response"].strip()
             return llm_output
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка генерации вопросов: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Ошибка генерации вопросов: {str(e)}"
+        )
 
 
 async def generate_questions(cv: str, vaca: str) -> list[str]:
@@ -39,7 +38,9 @@ async def generate_questions(cv: str, vaca: str) -> list[str]:
     return response.split("\n")
 
 
-async def evaluate_answers(cv: str, vaca: str, questions: list[str], answers: list[str]) -> dict:
+async def evaluate_answers(
+    cv: str, vaca: str, questions: list[str], answers: list[str]
+) -> dict:
     answers_context = "\n".join(
         [f"Вопрос: {q}\nОтвет: {a}\n" for q, a in zip(questions, answers)]
     )
@@ -73,4 +74,3 @@ async def evaluate_answers(cv: str, vaca: str, questions: list[str], answers: li
     except Exception:
         logger.info("Ответ от llm нельзя преобразовать в json")
         return None
-    
