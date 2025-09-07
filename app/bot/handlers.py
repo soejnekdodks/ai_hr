@@ -167,7 +167,7 @@ async def handle_resume_zip(
                 resume_bytes = archive.read(resume_name)
                 resume_format = resume_name.split(".")[-1].lower()
 
-                await message.answer(f"резюме: {resume_bytes[:20]}\n\nвака: {c}")
+                await message.answer(f"резюме: {resume_bytes[:20]}\n\nвака: {vacancy_text[:20]}")
                 
                 # Анализируем резюме
                 await analyze_resume(
