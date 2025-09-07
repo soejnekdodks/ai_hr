@@ -10,10 +10,6 @@ class Config(BaseSettings):
         extra="ignore",
     )
 
-    # Базовая модель + адаптер
-    LORA_MODEL: str = Field(
-        default="antontuzov/liza-06-resume-russian",
-        description="LoRA-адаптер для анализа резюме",
     BASE_MODEL: str = Field(
         default="Qwen/Qwen1.5-4B-Chat",
         description="Базовая LLM модель"
