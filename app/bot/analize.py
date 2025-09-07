@@ -32,7 +32,7 @@ def wrap_media(bytesio, filename, **kwargs):
     return InputFile(bytesio, filename=filename, **kwargs)
 
 
-async def analyze_and_send_resume(
+async def analyze_resume(
     message: types.Message,
     resume_bytes: bytes,
     vacancy_text: str,
