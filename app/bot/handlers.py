@@ -163,14 +163,14 @@ async def handle_resume_zip(
                 resume_bytes = archive.read(resume_name)
                 resume_format = resume_name.split(".")[-1].lower()
                 
-                session = await get_async_session()
-                await analyze_resume(
-                    message=message,
-                    resume_bytes=resume_bytes,
-                    vacancy_text=vacancy_text,
-                    file_format=resume_format,
-                    session=session,
-                )
+                async for session in get_async_session():
+                    await analyze_resume(
+                        message=message,
+                        resume_bytes=resume_bytes,
+                        vacancy_text=vacancy_text,
+                        file_format=resume_format,
+                        session=session,
+                    )
 
     except zipfile.BadZipFile:
         await message.answer(
@@ -181,10 +181,10 @@ async def handle_resume_zip(
         return
     except Exception as e:
         await message.answer(
-            f"❌ <b>Ошибка при обработке архива!</b>\n\n"
-            f"<code>{str(e)}</code>",
+            f"❌ <b>Ошибка при обработке архива!</b>\n\n",
             parse_mode="HTML",
         )
+        logger.error(e)
         return
 
     user_data["resume_zip"] = {
