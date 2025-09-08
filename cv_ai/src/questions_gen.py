@@ -1,9 +1,10 @@
 import torch
+from config import config
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
 
 class QuestionsGenerator:
-    def __init__(self, model_name: str = "Vikhrmodels/Vikhr-7B-instruct_0.4"):
-        self.model_name = model_name
+    def __init__(self):
+        self.model_name = config.BASE_MODEL
 
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
@@ -76,7 +77,7 @@ class QuestionsGenerator:
 
         full_prompt = f"{system_prompt}\n\n{user_prompt}"
 
-        raw_output = self._run_model(full_prompt, max_new_tokens=64)
+        raw_output = self._run_model(full_prompt, max_new_tokens=128)
 
         # Разбиваем результат построчно и убираем пустые строки
         questions = [q.strip("- ") for q in raw_output.split("\n") if q.strip()]

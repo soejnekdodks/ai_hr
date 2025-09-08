@@ -1,9 +1,10 @@
 import torch
+from config import config
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
 
 class AnswersAnalyzer:
-    def __init__(self, model_name: str = "Vikhrmodels/Vikhr-7B-instruct_0.4"):
-        self.model_name = model_name
+    def __init__(self):
+        self.model_name = config.BASE_MODEL
 
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
@@ -74,10 +75,10 @@ class AnswersAnalyzer:
             "Рекомендации: ..."
         )
 
-        user_prompt = f"Вот список вопросов и ответов кандидата (ответы могут быть неразборчивы):\n\n{qa_text}\n\nСоставь отчет."
+        user_prompt = f"Вот список вопросов и ответов кандидата (ответы могут быть неразборчивы):\n\n{qa_text}\n\nСоставь очень краткий отчет."
 
         full_prompt = f"{system_prompt}\n\n{user_prompt}"
 
-        raw_output = self._run_model(full_prompt, max_new_tokens=32)
+        raw_output = self._run_model(full_prompt, max_new_tokens=128)
 
         return {raw_output}
