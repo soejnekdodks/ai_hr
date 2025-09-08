@@ -19,7 +19,7 @@ class AnswersAnalyzer:
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            device_map="cuda",              # сам распределит по GPU/CPU
+            device_map="auto",              # сам распределит по GPU/CPU
             torch_dtype=torch.bfloat16,
             attn_implementation="sdpa",
             trust_remote_code=True
@@ -71,7 +71,7 @@ class AnswersAnalyzer:
         )
 
         system_prompt = (
-            "Ты — опытный интервьюер. Оцени ответы кандидата на вопросы. "
+            "Ты — опытный интервьюер. Без комментариев и кратко оцени ответы кандидата на вопросы."
             "Дай числовую оценку от 0 до 100, где 0 — очень плохо, 100 — идеально. "
             "Составь очень краткий отчет в формате:\n"
             "Оценка: <число>\n"
@@ -80,7 +80,7 @@ class AnswersAnalyzer:
             "Рекомендации: ..."
         )
 
-        user_prompt = f"Вот список вопросов и ответов кандидата (ответы могут быть неразборчивы):\n\n{qa_text}\n\nСоставь очень краткий отчет."
+        user_prompt = f"Вот список вопросов и ответов кандидата (ответы могут быть неразборчивы):\n\n{qa_text}"
 
         full_prompt = f"{system_prompt}\n\n{user_prompt}"
 

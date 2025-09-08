@@ -20,7 +20,7 @@ class ResumeVacancyAnalyze:
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            device_map="cuda",              # сам распределит по GPU/CPU
+            device_map="auto",              # сам распределит по GPU/CPU
             torch_dtype=torch.bfloat16,
             attn_implementation="sdpa",
             trust_remote_code=True

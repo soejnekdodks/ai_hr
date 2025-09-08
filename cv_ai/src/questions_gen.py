@@ -20,7 +20,7 @@ class QuestionsGenerator:
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            device_map="cuda",              # сам распределит по GPU/CPU
+            device_map="auto",              # сам распределит по GPU/CPU
             torch_dtype=torch.bfloat16,
             attn_implementation="sdpa",
             trust_remote_code=True
@@ -69,7 +69,7 @@ class QuestionsGenerator:
     def generate_questions(self, resume_text: str, vacancy_text: str, num_questions: int = 8) -> list:
         system_prompt = (
             "Ты — опытный HR-интервьюер. Твоя задача — придумать конкретные и осмысленные вопросы для интервью, "
-            "исходя из требований вакансии и опыта кандидата. Формулируй вопросы кратко и по делу. Без комментариев"
+            "исходя из требований вакансии и опыта кандидата. Не пиши комментарии"
         )
 
         user_prompt = (
