@@ -7,6 +7,6 @@ class ResumeVacancyMatcher:
 
     def match(self, resume_text: str, vacancy_text: str) -> float:
         # Получаем процент совпадения
-        percentage = self.parser.score_resume_vs_job(resume_text, vacancy_text)
+        percentage = self.parser.analyze_resume_vs_job(resume_text, vacancy_text)
         # Возвращаем только число
         return percentage
