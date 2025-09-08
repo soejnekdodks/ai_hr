@@ -1,6 +1,6 @@
 import re
 
-from src.config import config
+from config import config
 from api import cv_analize
 from pprint import pprint
 
