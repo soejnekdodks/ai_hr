@@ -1,35 +1,27 @@
-import re
-
-from config import config
-from api import cv_analize
-from pprint import pprint
-
-from api import cv_analize
-from src.config import config
-
-resume_text = """
-Иванов Иван Python разработчик с 5 летним опытом.
-Работал в Яндексе с Django и Flask. 
-Проживает в Москве. Высшее образование МГУ.
-"""
-
-vacancy_text = """
-Ищем Senior Python developer с опытом работы от 3 лет.
-Требования: Django, Flask, PostgreSQL. 
-Работа в Москве. Офис в центре города.
-"""
-
-# pprint(cv_analize(resume_text, vacancy_text))
+from answers_analize import AnswersAnalyzer
+from cv_analyze import ResumeVacancyAnalyze
+from questions_gen import QuestionsGenerator
 
 
-def clean_quotes(text: str) -> str:
-    # заменяем "..." внутри русских слов на «...»
-    text = re.sub(r"\"([А-Яа-яA-Za-z0-9\s\-]+)\"", r"«\1»", text)
-    return text
+resume="""
+    Резюме кандидата. ФИО: Петров Алексей Сергеевич. Должность: Backend-разработчик (Node.js). Опыт: 3 года. Занятость: удаленная. 
+    Контакты: email: petrov.a@mail.com, telegram: @alexey_petrov. 
+    Навыки: JavaScript, TypeScript, Node.js, Express, NestJS, PostgreSQL, MongoDB, Redis, Docker, Jest, REST API, GraphQL. 
+    Опыт работы: Компания "ТехноСистемы" (2021-настоящее время). Разработка API для маркетплейса. Оптимизация БД. Внедрение тестирования. Интеграция с Elasticsearch. 
+    Образование: Университет ИТМО, бакалавр компьютерных наук. О себе: ответственный, инициативный, быстро учусь.
+    """
+vacancy ="""
+    Вакансия. Должность: Backend-разработчик (Node.js). Уровень: Middle. Формат: удаленно. Проект: SaaS-платформа с AI. 
+    Обязанности: разработка backend, проектирование API, интеграция с сервисами, оптимизация производительности, код-ревью. 
+    Требования: опыт Node.js от 2 лет, Express/Nest.js, PostgreSQL/MongoDB, REST API, Git, тестирование, Docker. 
+    Плюсы: TypeScript, GraphQL, RabbitMQ/Kafka, микросервисы, AWS/GCP. Условия: график 10-19 МСК, оформление по ТК РФ, отпуск и больничные.
+    """
+questions=["Что такое замыкание (closure) в JavaScript?", "Как избежать Callback Hell?", "Объясните принципы REST.", "Что такое миграции базы данных и зачем они нужны?", "Как вы обеспечиваете безопасность своего API?"] 
+answers = ["Замыкание — это функция, которая имеет доступ к переменным из своего лексического окружения, даже после того, как внешняя функция завершила выполнение.", "Чтобы избежать Callback Hell, можно использовать Promises, async/await или разбивать функции на более мелкие и именованные.", "REST — архитектурный стиль, который использует HTTP-методы (GET, POST, PUT, DELETE) для операций с ресурсами, представленными в виде URI. Он stateless и ориентирован на ресурсы.", "Миграции — это система контроля версий для базы данных. Они позволяют последовательно применять и откатывать изменения схемы БД, что необходимо для командной разработки и развертывания.", "Безопасность API обеспечивается аутентификацией (JWT, OAuth), валидацией входящих данных, лимитом запросов (rate limiting), HTTPS и проверкой прав доступа (authorization) для каждого endpoint."]
 
-
-with open(f"{config.PATH_TO_TEST_VACANCY}", "r", encoding="utf-8") as vaca:
-    with open(f"{config.PATH_TO_TEST_RESUME}", "r", encoding="utf-8") as cv:
-        resume_text = clean_quotes(cv.read())
-        vacancy_text = clean_quotes(vaca.read())
-        pprint(cv_analize(resume_text, vacancy_text))
+cv_analyze = ResumeVacancyAnalyze()
+print(cv_analyze.analyze_resume_vs_vacancy(resume, vacancy))
+questions_gen = QuestionsGenerator()
+print(questions_gen.generate_questions(resume, vacancy))
+answers_analyze = AnswersAnalyzer()
+print(answers_analyze.analyze_answers(questions, answers))
