@@ -1,74 +1,73 @@
-import torch
 import re
+import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from config import config
 
-class ResumeParser:
-    def __init__(self):
-        # Загрузка модели и токенизатора для DeepSeek-V2-Lite
+
+class ResumeVacancyAnalyze:
+    def __init__(self, model_name: str = None, device_map="auto"):
+        self.model_name = model_name or config.BASE_MODEL
+
+        # Загружаем модель
         self.model = AutoModelForCausalLM.from_pretrained(
-            config.BASE_MODEL,
-            dtype=torch.float16,  # Новый синтаксис вместо torch_dtype
-            device_map="auto",    # Автораспределение по GPU
+            self.model_name,
+            torch_dtype=torch.float16,
+            device_map=device_map,
+            trust_remote_code=True,
         )
-        self.tokenizer = AutoTokenizer.from_pretrained(config.BASE_MODEL)
 
-        # Фикс пад-токена
-        if self.tokenizer.pad_token is None:
-            self.tokenizer.pad_token = self.tokenizer.eos_token
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.model_name,
+            trust_remote_code=True
+        )
 
-        self.model.eval()
-        self.eos_token_id = getattr(self.tokenizer, "eos_token_id", None)
+        if self.tokenizer.pad_token_id is None:
+            if self.tokenizer.eos_token_id is not None:
+                self.tokenizer.pad_token = self.tokenizer.eos_token
+            else:
+                self.tokenizer.add_special_tokens({"pad_token": "[PAD]"})
+                self.model.resize_token_embeddings(len(self.tokenizer))
 
-    def __build_prompt(self, text: str) -> str:
-        # Стандартный текстовый prompt для модели
-        return f"{config.SYSTEM_PROMPT}\n\n{text}"
-
-    def _run_model(self, prompt: str, max_new_tokens: int = 64) -> str:
-        inputs = self.tokenizer(
-            prompt,
-            return_tensors="pt",
-            truncation=True,
-            max_length=1024
-        ).to(self.model.device)
+    def _run_model(self, prompt: str, max_new_tokens: int = 128) -> str:
+        inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True)
+        device = next(self.model.parameters()).device
+        inputs = {k: v.to(device) for k, v in inputs.items()}
 
         with torch.no_grad():
+            # Параметры генерации передаются напрямую в generate
             out = self.model.generate(
                 **inputs,
                 max_new_tokens=max_new_tokens,
-                do_sample=False,  # Отключаем случайность для предсказуемости
-                top_p=1.0,        # Используем максимальный срез вероятностей
-                top_k=50,         # Устанавливаем top-k для предотвращения повторений
-                no_repeat_ngram_size=3,  # Запрещаем повторение n-грамм (увеличено до 3)
-                pad_token_id=self.tokenizer.eos_token_id  # Устанавливаем пад-токен
+                do_sample=False,  # Параметры передаются напрямую
+                temperature=0.0,
+                top_p=0.95,
+                eos_token_id=self.tokenizer.eos_token_id,
+                pad_token_id=self.tokenizer.pad_token_id,
             )
+        text = self.tokenizer.decode(out[0], skip_special_tokens=True)
+        return text
 
-        # Декодируем только сгенерированный текст
-        decoded = self.tokenizer.decode(
-            out[0][inputs.input_ids.shape[-1]:],
-            skip_special_tokens=True
-        )
-        return decoded.strip()
-
-    def evaluate_match(self, resume_text: str, vacancy_text: str) -> float:
+    def score_resume_vs_job(self, resume_text: str, vacancy_text: str) -> float:
         prompt = (
-            f"Вакансия:\n{vacancy_text}\n\n"
-            f"Резюме:\n{resume_text}\n\n"
+            "No eplanation and extra text!"
+            "Vacancy:\n"
+            f"{vacancy_text}\n\n"
+            "Resume:\n"
+            f"{resume_text}\n\n"
+            "You are an strict hr assistant that compares a candidate resume and a job vacancy. "
+            "Return a single number between 0 and 100 — the percent match (no explanation).\n"
+            "Answer with a single number only."
         )
 
-        for attempt in range(3):
-            full_prompt = self.__build_prompt(prompt)
-            raw_output = self._run_model(full_prompt, max_new_tokens=64)
-            print(raw_output)
-            # Извлекаем числа из текста
-            numbers = re.findall(r"\d+(?:\.\d+)?", raw_output)
-            if numbers:
-                try:
-                    # Возвращаем минимальное значение (чтобы избежать ошибок на невалидных данных)
-                    match_percentage = float(numbers[0])
-                    # Ограничиваем результат 100
-                    return min(100.0, match_percentage)
-                except ValueError:
-                    continue
-        # fallback: если нет валидных чисел, возвращаем 0
+        raw_output = self._run_model(prompt) # Прогнали модель на промпте
+        raw_output = self._run_model(prompt) # Она дала результат
+
+        numbers = re.findall(r"\d+(?:[\.,]\d+)?", raw_output)
+        if numbers:
+            try:
+                num = float(numbers[0].replace(',', '.'))
+                return min(max(num, 0.0), 100.0)
+            except ValueError:
+                pass
+
         return 0.0
