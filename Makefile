@@ -11,6 +11,7 @@ up:
 	docker compose down
 
 format:
+	- poetry run isort . --profile black
 	- poetry run ruff format .
 
 lint:
