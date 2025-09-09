@@ -63,9 +63,17 @@ async def post_quentions(
             status_code=406, detail="Interview saving does not acceptable"
         )
     await query.interview.mark_as_finished(session, interview.id)
+    await query.questions.set_answers(
+        session, [answer.model_dump() for answer in data.answers]
+    )
     return Response(status_code=201)
 
 
 @router.get("/api/v1/deeplink")
 async def deeplink(id: str) -> None:
     return RedirectResponse(url=f"vtbhackaton://interview/{id}")
+
+
+@router.get("/api/v1/all-questions")
+async def get_all_questions(session: AsyncSession = Depends(get_async_session)):
+    return await query.questions.all(session)
