@@ -12,6 +12,7 @@ MAX_ZIP_SIZE = 10 * 1024 * 1024  # 10MB
 MAX_RESUME_SIZE = 2 * 1024 * 1024  # 2MB
 MAX_RESUMES_IN_ZIP = 10
 
+
 @router.message(Command("start", "help"))
 async def cmd_start_help(message: Message):
     welcome_text = (
@@ -37,17 +38,17 @@ async def cmd_start_help(message: Message):
 )
 async def handle_vacancy_file(message: Message):
     file_size = message.document.file_size
-    
+
     if file_size > MAX_VACANCY_SIZE:
         await message.answer(
             f"❌ <b>Размер файла вакансии превышен!</b>\n\n"
             f"📊 <b>Текущий размер:</b> {file_size / 1024 / 1024:.1f}MB\n"
             f"📏 <b>Максимальный размер:</b> {MAX_VACANCY_SIZE / 1024 / 1024}MB\n\n"
             "📎 Пожалуйста, загрузите файл меньшего размера.",
-            parse_mode="HTML"
+            parse_mode="HTML",
         )
         return
-    
+
     file_id = message.document.file_id
     file_name = message.document.file_name
 
@@ -68,7 +69,7 @@ async def handle_resume_zip(message: Message):
     user_id = message.from_user.id
     file_name = message.document.file_name
     file_size = message.document.file_size
-    
+
     # Проверка размера архива
     if file_size > MAX_ZIP_SIZE:
         await message.answer(
@@ -76,7 +77,7 @@ async def handle_resume_zip(message: Message):
             f"📊 <b>Текущий размер:</b> {file_size / 1024 / 1024:.1f}MB\n"
             f"📏 <b>Максимальный размер:</b> {MAX_ZIP_SIZE / 1024 / 1024}MB\n\n"
             "📎 Пожалуйста, загрузите архив меньшего размера.",
-            parse_mode="HTML"
+            parse_mode="HTML",
         )
         return
 
@@ -93,22 +94,25 @@ async def handle_resume_zip(message: Message):
     try:
         file = await message.bot.get_file(message.document.file_id)
         downloaded = await message.bot.download_file(file.file_path)
-        
+
         with zipfile.ZipFile(BytesIO(downloaded.read())) as archive:
             # Проверяем количество файлов
-            resume_files = [name for name in archive.namelist() 
-                          if name.lower().endswith(('.pdf', '.txt'))]
-            
+            resume_files = [
+                name
+                for name in archive.namelist()
+                if name.lower().endswith((".pdf", ".txt"))
+            ]
+
             if len(resume_files) > MAX_RESUMES_IN_ZIP:
                 await message.answer(
                     f"❌ <b>Слишком много резюме в архиве!</b>\n\n"
                     f"📊 <b>Найдено резюме:</b> {len(resume_files)}\n"
                     f"📏 <b>Максимально разрешено:</b> {MAX_RESUMES_IN_ZIP}\n\n"
                     "📎 Пожалуйста, уменьшите количество резюме в архиве.",
-                    parse_mode="HTML"
+                    parse_mode="HTML",
                 )
                 return
-            
+
             # Проверяем размер каждого резюме
             oversized_files = []
             for resume_name in resume_files:
@@ -117,7 +121,7 @@ async def handle_resume_zip(message: Message):
                     oversized_files.append(
                         f"{resume_name} ({file_info.file_size / 1024 / 1024:.1f}MB)"
                     )
-            
+
             if oversized_files:
                 oversized_list = "\n".join([f"• {file}" for file in oversized_files])
                 await message.answer(
@@ -125,26 +129,30 @@ async def handle_resume_zip(message: Message):
                     f"📏 <b>Максимальный размер резюме:</b> {MAX_RESUME_SIZE / 1024 / 1024}MB\n\n"
                     f"📎 <b>Файлы с превышением:</b>\n{oversized_list}\n\n"
                     "📎 Пожалуйста, уменьшите размер этих файлов и попробуйте снова.",
-                    parse_mode="HTML"
+                    parse_mode="HTML",
                 )
                 return
-    
+
     except zipfile.BadZipFile:
         await message.answer(
             "❌ <b>Некорректный ZIP-архив!</b>\n\n"
             "📎 Пожалуйста, убедитесь, что архив не поврежден и попробуйте снова.",
-            parse_mode="HTML"
+            parse_mode="HTML",
         )
         return
     except Exception as e:
         await message.answer(
             "❌ <b>Ошибка при обработке архива!</b>\n\n"
             "📎 Пожалуйста, попробуйте снова или обратитесь к администратору.",
-            parse_mode="HTML"
+            parse_mode="HTML",
         )
         return
 
-    user_data["resume_zip"] = {"id": message.document.file_id, "name": file_name, "size": file_size}
+    user_data["resume_zip"] = {
+        "id": message.document.file_id,
+        "name": file_name,
+        "size": file_size,
+    }
     user_file_storage[user_id] = user_data
 
     await message.answer(
@@ -155,6 +163,7 @@ async def handle_resume_zip(message: Message):
         "🎉 <b>Все файлы получены. Обработка завершена!</b>",
         parse_mode="HTML",
     )
+    # TODO сюда обработку нейронкой
 
 
 @router.message(F.document)
