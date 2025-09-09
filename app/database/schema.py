@@ -8,11 +8,23 @@ from app.database.core import Base
 from app.enums import InterviewState
 
 
+class Chat(Base):
+    __tablename__ = "chats"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, index=True)
+    chat_id: Mapped[str] = mapped_column()
+
+    candidates: Mapped[list["Candidate"]] = relationship(
+        back_populates="chat", cascade="all, delete-orphan"
+    )
+
+
 class Candidate(Base):
     __tablename__ = "candidates"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, index=True)
     cv: Mapped[bytes | None] = mapped_column(LargeBinary)
+
     interview_id: Mapped[int | None] = mapped_column(
         ForeignKey("interviews.id", ondelete="CASCADE"), unique=True
     )
@@ -20,6 +32,11 @@ class Candidate(Base):
         back_populates="candidate",
         uselist=False,
     )
+
+    chat_id: Mapped[int | None] = mapped_column(
+        ForeignKey("chats.id", ondelete="CASCADE")
+    )
+    chat: Mapped[Chat] = relationship(back_populates="candidates")
 
 
 class Interview(Base):
