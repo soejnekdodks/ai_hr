@@ -151,6 +151,7 @@ async def handle_resume_zip(
                 resume_bytes = archive.read(resume_name)
                 resume_format = resume_name.split(".")[-1].lower()
 
+                # Анализируем резюме
                 await analyze_resume(
                     message=message,
                     resume_bytes=resume_bytes,

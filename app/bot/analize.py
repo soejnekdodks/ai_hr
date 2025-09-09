@@ -1,12 +1,12 @@
 import zipfile
 from io import BytesIO
 from datetime import timedelta
+import os
 
 from aiogram import Router
 from aiogram.types import Message, InputFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
-
 import magic
 
 from app.bot.start_bot import bot
@@ -19,22 +19,23 @@ from cv_ai.cv_analyze import ResumeVacancyAnalyze
 from cv_ai.questions_gen import QuestionsGenerator
 from app.database.schema import Candidate
 
+# Максимальные значения для проверки архива
+MAX_ZIP_SIZE = 50 * 1024 * 1024  # 50MB
+MAX_RESUMES_IN_ZIP = 10
+MAX_RESUME_SIZE = 10 * 1024 * 1024  # 10MB
 
 router = Router()
-
 
 async def analyze_resume(
     message: Message,
     resume_bytes: bytes,
-    vacancy_bytes: bytes,
+    vacancy_text: str,
     file_format: str,
     session: AsyncSession,
 ):
     """Анализ резюме и создание интервью (если прошло отбор)."""
-
     cv_analyze = ResumeVacancyAnalyze()
     resume_text = document_to_text(resume_bytes, file_format)
-    vacancy_text = document_to_text(vacancy_bytes, file_format)
 
     match_percentage = cv_analyze.analyze_resume_vs_vacancy(resume_text, vacancy_text)
     url = create_mock()
@@ -59,6 +60,12 @@ async def analyze_resume(
             expiration_time=timedelta(days=7),
         )
 
+        # Получаем chat_id HR-у
+        hr_chat_id = candidate.chat_id
+        if not hr_chat_id:
+            await message.answer("❌ Не удалось найти chat_id HR для кандидата.")
+            return
+
         # --- Формируем сообщение HR ---
         file_info = get_file_info(resume_bytes, file_format)
         caption = (
@@ -72,8 +79,9 @@ async def analyze_resume(
         cv_file = BytesIO(candidate.cv)
         filename = f"resume_candidate_{candidate.id}{file_info['extension']}"
 
+        # Отправляем резюме HR-у
         await bot.send_document(
-            chat_id=message.chat.id,
+            chat_id=hr_chat_id,
             document=InputFile(cv_file, filename=filename),
             caption=caption,
         )
@@ -83,8 +91,6 @@ async def analyze_resume(
             f"(совпадение {match_percentage:.1f}%)."
         )
 
-
-# ---------------- Вспомогательные функции ----------------
 
 def get_file_info(file_bytes: bytes, original_format: str) -> dict:
     size_bytes = len(file_bytes)
@@ -108,8 +114,3 @@ def get_file_info(file_bytes: bytes, original_format: str) -> dict:
         "format": original_format.upper(),
         "extension": extension,
     }
-
-
-def create_mock() -> str:
-    """Временная заглушка для генерации ссылки на интервью."""
-    return "https://example.com/interview/mock"
