@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel
 from pydantic.alias_generators import to_camel
 
@@ -23,5 +25,5 @@ class Answer(BaseScheme):
 
 
 class AnswersRequest(BaseScheme):
-    interview_id: int
+    interview_id: uuid.UUID
     answers: list[Answer]
