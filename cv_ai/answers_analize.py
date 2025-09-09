@@ -1,6 +1,12 @@
 import torch
 from config import config
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    pipeline,
+)
+
 
 class AnswersAnalyzer:
     def __init__(self):
@@ -19,10 +25,10 @@ class AnswersAnalyzer:
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            device_map="auto",              # сам распределит по GPU/CPU
+            device_map="auto",  # сам распределит по GPU/CPU
             torch_dtype=torch.bfloat16,
             attn_implementation="sdpa",
-            trust_remote_code=True
+            trust_remote_code=True,
         )
 
         self.tokenizer = AutoTokenizer.from_pretrained(

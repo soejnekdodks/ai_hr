@@ -1,11 +1,16 @@
 import torch
 from config import config
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    pipeline,
+)
+
 
 class QuestionsGenerator:
     def __init__(self):
         self.model_name = config.BASE_MODEL
-
 
         # Если резко захотели ебнутый прирост производительности
 
@@ -20,7 +25,7 @@ class QuestionsGenerator:
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            device_map="auto",              # сам распределит по GPU/CPU
+            device_map="auto",  # сам распределит по GPU/CPU
             torch_dtype=torch.bfloat16,
             attn_implementation="sdpa",
             trust_remote_code=True,
@@ -65,7 +70,9 @@ class QuestionsGenerator:
             print(f"Ошибка при генерации текста: {e}")
             return ""
 
-    def generate_questions(self, resume_text: str, vacancy_text: str, num_questions: int = 8) -> list:
+    def generate_questions(
+        self, resume_text: str, vacancy_text: str, num_questions: int = 8
+    ) -> list:
         system_prompt = (
             "Ты — опытный HR-интервьюер. Не пиши лишние комментарии. Твоя задача — придумать конкретные и осмысленные вопросы для интервью, "
             "исходя из требований вакансии и опыта кандидата. "

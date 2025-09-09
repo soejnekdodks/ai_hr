@@ -2,14 +2,20 @@ import re
 
 import torch
 from config import config
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    pipeline,
+)
+
 
 class ResumeVacancyAnalyze:
     def __init__(self):
         self.model_name = config.BASE_MODEL
 
         # Если резко захотели ебнутый прирост производительности
-        
+
         # bnb_config = BitsAndBytesConfig(
         #     load_in_4bit=True,
         #     bnb_4bit_compute_dtype=torch.bfloat16,  # можно заменить на torch.float16
@@ -21,7 +27,7 @@ class ResumeVacancyAnalyze:
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            device_map="auto",              # сам распределит по GPU/CPU
+            device_map="auto",  # сам распределит по GPU/CPU
             torch_dtype=torch.bfloat16,
             attn_implementation="sdpa",
             trust_remote_code=True,

@@ -1,9 +1,14 @@
 import zipfile
 from io import BytesIO
-
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message
+
+from app.bot.analize import analyze_resume
+from app.database.core import get_async_session
+from app.parsing import document_to_text
 
 router = Router()
 
@@ -66,7 +71,10 @@ async def handle_vacancy_file(message: Message):
 
 
 @router.message(F.document & F.document.file_name.endswith(".zip"))
-async def handle_resume_zip(message: Message):
+async def handle_resume_zip(
+    message: Message,
+    session: AsyncSession = Depends(get_async_session),
+):
     user_id = message.from_user.id
     file_name = message.document.file_name
     file_size = message.document.file_size
@@ -97,11 +105,10 @@ async def handle_resume_zip(message: Message):
         downloaded = await message.bot.download_file(file.file_path)
 
         with zipfile.ZipFile(BytesIO(downloaded.read())) as archive:
-            # Проверяем количество файлов
             resume_files = [
                 name
                 for name in archive.namelist()
-                if name.lower().endswith((".pdf", ".txt"))
+                if name.lower().endswith((".pdf", ".txt", ".docx", ".doc"))
             ]
 
             if len(resume_files) > MAX_RESUMES_IN_ZIP:
@@ -114,7 +121,7 @@ async def handle_resume_zip(message: Message):
                 )
                 return
 
-            # Проверяем размер каждого резюме
+            # Проверяем размер каждого файла
             oversized_files = []
             for resume_name in resume_files:
                 file_info = archive.getinfo(resume_name)
@@ -134,6 +141,24 @@ async def handle_resume_zip(message: Message):
                 )
                 return
 
+            # --- Обработка нейросетью ---
+            vacancy_file = user_data["vacancy_file"]
+            vacancy_bytes = vacancy_file["bytes"]
+            vacancy_format = vacancy_file["format"]
+            vacancy_text = document_to_text(vacancy_bytes, vacancy_format)
+
+            for resume_name in resume_files:
+                resume_bytes = archive.read(resume_name)
+                resume_format = resume_name.split(".")[-1].lower()
+
+                await analyze_resume(
+                    message=message,
+                    resume_bytes=resume_bytes,
+                    vacancy_text=vacancy_text,
+                    file_format=resume_format,
+                    session=session,
+                )
+
     except zipfile.BadZipFile:
         await message.answer(
             "❌ <b>Некорректный ZIP-архив!</b>\n\n"
@@ -143,8 +168,8 @@ async def handle_resume_zip(message: Message):
         return
     except Exception as e:
         await message.answer(
-            "❌ <b>Ошибка при обработке архива!</b>\n\n"
-            "📎 Пожалуйста, попробуйте снова или обратитесь к администратору.",
+            f"❌ <b>Ошибка при обработке архива!</b>\n\n"
+            f"<code>{str(e)}</code>",
             parse_mode="HTML",
         )
         return
@@ -157,15 +182,9 @@ async def handle_resume_zip(message: Message):
     user_file_storage[user_id] = user_data
 
     await message.answer(
-        f"✅ <b>Архив</b> <code>{file_name}</code> <b>с резюме принят!</b>\n"
-        f"📊 <b>Размер архива:</b> {file_size / 1024 / 1024:.1f}MB\n"
-        f"📄 <b>Количество резюме:</b> {len(resume_files)}\n"
-        f"💼 <b>Вакансия:</b> <code>{user_data['vacancy_file']['name']}</code>\n\n"
-        "🎉 <b>Все файлы получены. Обработка завершена!</b>",
+        f"✅ <b>Архив</b> <code>{file_name}</code> <b>с резюме принят и обработан!</b>",
         parse_mode="HTML",
     )
-    # TODO сюда обработку нейронкой
-
 
 @router.message(F.document)
 async def handle_unknown_document(message: Message):
