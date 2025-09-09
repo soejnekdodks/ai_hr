@@ -1,7 +1,6 @@
+from answers_analize import AnswersAnalyzer
 from cv_analyze import ResumeVacancyAnalyze
 from questions_gen import QuestionsGenerator
-from answers_analize import AnswersAnalyzer
-
 
 resume = """
     Резюме кандидата. ФИО: Петров Алексей Сергеевич. Должность: Backend-разработчик (Node.js). Опыт: 3 года. Занятость: удаленная. 

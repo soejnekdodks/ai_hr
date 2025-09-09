@@ -1,13 +1,15 @@
+from io import BytesIO
+
+from aiogram import Router
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.bot.start_bot import bot
+from app.database.core import get_async_session
+from app.database.query.candidate import create
+from cv_ai.answers_analize import AnswersAnalyzer
 from cv_ai.cv_analyze import ResumeVacancyAnalyze
 from cv_ai.questions_gen import QuestionsGenerator
-from cv_ai.answers_analize import AnswersAnalyzer
-from aiogram import Router
-from io import BytesIO
-from app.bot.start_bot import bot
-from app.database.query.candidate import create
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends
-from app.database.core import get_async_session
 
 router = Router()
 
