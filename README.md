@@ -1,7 +1,6 @@
 # AI HR | Сервис автоматического проведения собеседований
 
 <h1 align="center">AI HR</h1>
-<div><h4 align="center"><a href="#-быстрый-старт">Установка</a> · <a href="#-разработка">Разработка</a> · <a href="#функционал">Функции</a> · <a href="#технологии">Технологии</a></h4></div>
 
 <div align="center">
   <a href="https://www.python.org/">
